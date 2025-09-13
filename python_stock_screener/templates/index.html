@@ -1,0 +1,31 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-Time Stock Screener</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        document.addEventListener('DOMContentLoaded', function() {
+            var socket = io.connect('http://' + document.domain + ':' + location.port + '/test');
+
+            socket.on('connect', function() {
+                console.log('Websocket connected!');
+            });
+
+            socket.on('new_alert', function(msg) {
+                console.log('Received alert: ' + msg.data);
+                var ul = document.getElementById('alerts');
+                var li = document.createElement('li');
+                li.appendChild(document.createTextNode(msg.data));
+                ul.appendChild(li);
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Real-Time Stock Screener Alerts</h1>
+    <ul id="alerts">
+        <!-- Alerts will be added here dynamically -->
+    </ul>
+</body>
+</html>
