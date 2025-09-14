@@ -1,0 +1,246 @@
+//@version=5
+indicator("IQRA", shorttitle="IQRA", overlay=true)
+
+// =====================================================================================================================
+// Ripster EMA Clouds
+// =====================================================================================================================
+ripster_group = "Ripster EMA Clouds"
+ripster_show_clouds = input.bool(true, "Show Ripster EMA Clouds", group = ripster_group)
+
+ripster_matype = input.string(title="MA Type", defval="EMA", options=["EMA", "SMA"], group=ripster_group)
+ripster_src = input.source(title="Source", defval=hl2, group=ripster_group)
+ripster_ma_offset = input.int(title="Offset", defval=0, group=ripster_group)
+ripster_emacloudleading = input.int(0, minval=0, title="Leading Period For EMA Cloud", group=ripster_group)
+
+ripster_showLine = input.bool(false, title="Display EMA Line", group=ripster_group)
+ripster_ema1 = input.bool(true, title="Show EMA Cloud-1", group=ripster_group)
+ripster_ema2 = input.bool(true, title="Show EMA Cloud-2", group=ripster_group)
+ripster_ema3 = input.bool(true, title="Show EMA Cloud-3", group=ripster_group)
+ripster_ema4 = input.bool(false, title="Show EMA Cloud-4", group=ripster_group)
+ripster_ema5 = input.bool(false, title="Show EMA Cloud-5", group=ripster_group)
+
+ripster_ma_len1 = input.int(title="Short EMA1 Length", defval=8, group=ripster_group)
+ripster_ma_len2 = input.int(title="Long EMA1 Length", defval=9, group=ripster_group)
+ripster_ma_len3 = input.int(title="Short EMA2 Length", defval=5, group=ripster_group)
+ripster_ma_len4 = input.int(title="Long EMA2 Length", defval=12, group=ripster_group)
+ripster_ma_len5 = input.int(title="Short EMA3 Length", defval=34, group=ripster_group)
+ripster_ma_len6 = input.int(title="Long EMA3 Length", defval=50, group=ripster_group)
+ripster_ma_len7 = input.int(title="Short EMA4 Length", defval=72, group=ripster_group)
+ripster_ma_len8 = input.int(title="Long EMA4 Length", defval=89, group=ripster_group)
+ripster_ma_len9 = input.int(title="Short EMA5 Length", defval=180, group=ripster_group)
+ripster_ma_len10 = input.int(title="Long EMA5 Length", defval=200, group=ripster_group)
+
+
+f_ripster_ma(malen) =>
+    result = 0.0
+    if (ripster_matype == "EMA")
+        result := ta.ema(ripster_src, malen)
+    if (ripster_matype == "SMA")
+        result := ta.sma(ripster_src, malen)
+    result
+
+ripster_mashort1 = f_ripster_ma(ripster_ma_len1)
+ripster_malong1 = f_ripster_ma(ripster_ma_len2)
+ripster_mashort2 = f_ripster_ma(ripster_ma_len3)
+ripster_malong2 = f_ripster_ma(ripster_ma_len4)
+ripster_mashort3 = f_ripster_ma(ripster_ma_len5)
+ripster_malong3 = f_ripster_ma(ripster_ma_len6)
+ripster_mashort4 = f_ripster_ma(ripster_ma_len7)
+ripster_malong4 = f_ripster_ma(ripster_ma_len8)
+ripster_mashort5 = f_ripster_ma(ripster_ma_len9)
+ripster_malong5 = f_ripster_ma(ripster_ma_len10)
+
+ripster_cloudcolour1 = ripster_mashort1 >= ripster_malong1 ? #036103 : #880e4f
+ripster_cloudcolour2 = ripster_mashort2 >= ripster_malong2 ? #4caf50 : #f44336
+ripster_cloudcolour3 = ripster_mashort3 >= ripster_malong3 ? #2196f3 : #ffb74d
+ripster_cloudcolour4 = ripster_mashort4 >= ripster_malong4 ? #009688 : #f06292
+ripster_cloudcolour5 = ripster_mashort5 >= ripster_malong5 ? #05bed5 : #e65100
+
+ripster_mashortcolor1 = ripster_mashort1 >= ripster_mashort1[1] ? color.olive : color.maroon
+ripster_mashortcolor2 = ripster_mashort2 >= ripster_mashort2[1] ? color.olive : color.maroon
+ripster_mashortcolor3 = ripster_mashort3 >= ripster_mashort3[1] ? color.olive : color.maroon
+ripster_mashortcolor4 = ripster_mashort4 >= ripster_mashort4[1] ? color.olive : color.maroon
+ripster_mashortcolor5 = ripster_mashort5 >= ripster_mashort5[1] ? color.rgb(179, 179, 43) : color.maroon
+
+ripster_mashortline1 = plot(ripster_show_clouds and ripster_ema1 ? ripster_mashort1 : na, color=ripster_showLine ? ripster_mashortcolor1 : na, linewidth=1, offset=ripster_emacloudleading, title="Short Leading EMA1")
+ripster_mashortline2 = plot(ripster_show_clouds and ripster_ema2 ? ripster_mashort2 : na, color=ripster_showLine ? ripster_mashortcolor2 : na, linewidth=1, offset=ripster_emacloudleading, title="Short Leading EMA2")
+ripster_mashortline3 = plot(ripster_show_clouds and ripster_ema3 ? ripster_mashort3 : na, color=ripster_showLine ? ripster_mashortcolor3 : na, linewidth=1, offset=ripster_emacloudleading, title="Short Leading EMA3")
+ripster_mashortline4 = plot(ripster_show_clouds and ripster_ema4 ? ripster_mashort4 : na, color=ripster_showLine ? ripster_mashortcolor4 : na, linewidth=1, offset=ripster_emacloudleading, title="Short Leading EMA4")
+ripster_mashortline5 = plot(ripster_show_clouds and ripster_ema5 ? ripster_mashort5 : na, color=ripster_showLine ? ripster_mashortcolor5 : na, linewidth=1, offset=ripster_emacloudleading, title="Short Leading EMA5")
+
+ripster_malongcolor1 = ripster_malong1 >= ripster_malong1[1] ? color.green : color.red
+ripster_malongcolor2 = ripster_malong2 >= ripster_malong2[1] ? color.green : color.red
+ripster_malongcolor3 = ripster_malong3 >= ripster_malong3[1] ? color.green : color.red
+ripster_malongcolor4 = ripster_malong4 >= ripster_malong4[1] ? color.green : color.red
+ripster_malongcolor5 = ripster_malong5 >= ripster_malong5[1] ? color.green : color.red
+
+ripster_malongline1 = plot(ripster_show_clouds and ripster_ema1 ? ripster_malong1 : na, color=ripster_showLine ? ripster_malongcolor1 : na, linewidth=3, offset=ripster_emacloudleading, title="Long Leading EMA1")
+ripster_malongline2 = plot(ripster_show_clouds and ripster_ema2 ? ripster_malong2 : na, color=ripster_showLine ? ripster_malongcolor2 : na, linewidth=3, offset=ripster_emacloudleading, title="Long Leading EMA2")
+ripster_malongline3 = plot(ripster_show_clouds and ripster_ema3 ? ripster_malong3 : na, color=ripster_showLine ? ripster_malongcolor3 : na, linewidth=3, offset=ripster_emacloudleading, title="Long Leading EMA3")
+ripster_malongline4 = plot(ripster_show_clouds and ripster_ema4 ? ripster_malong4 : na, color=ripster_showLine ? ripster_malongcolor4 : na, linewidth=3, offset=ripster_emacloudleading, title="Long Leading EMA4")
+ripster_malongline5 = plot(ripster_show_clouds and ripster_ema5 ? ripster_malong5 : na, color=ripster_showLine ? ripster_malongcolor5 : na, linewidth=3, offset=ripster_emacloudleading, title="Long Leading EMA5")
+
+
+fill(ripster_mashortline1, ripster_malongline1, color=ripster_show_clouds and ripster_ema1 ? color.new(ripster_cloudcolour1, 45) : na, title="MA Cloud1")
+fill(ripster_mashortline2, ripster_malongline2, color=ripster_show_clouds and ripster_ema2 ? color.new(ripster_cloudcolour2, 65) : na, title="MA Cloud2")
+fill(ripster_mashortline3, ripster_malongline3, color=ripster_show_clouds and ripster_ema3 ? color.new(ripster_cloudcolour3, 70) : na, title="MA Cloud3")
+fill(ripster_mashortline4, ripster_malongline4, color=ripster_show_clouds and ripster_ema4 ? color.new(ripster_cloudcolour4, 65) : na, title="MA Cloud4")
+fill(ripster_mashortline5, ripster_malongline5, color=ripster_show_clouds and ripster_ema5 ? color.new(ripster_cloudcolour5, 65) : na, title="MA Cloud5")
+
+// =====================================================================================================================
+// DPOMA & EMAMA
+// =====================================================================================================================
+dpoma_group = "DPOMA"
+dpoma_show = input.bool(true, "Show DPOMA", group = dpoma_group)
+dpoma_src    = input.source(ohlc4, title="Source", group=dpoma_group)
+dpoma_length = input.int(24, title="DPO Length", minval=1, group=dpoma_group)
+dpoma_smoothing  = input.int(6, title="Smoothing", minval=1, group=dpoma_group)
+
+dpoma_offset = int(math.round(dpoma_length / 2)) + 1
+dpoma_dpo_disp  = dpoma_src - ta.sma(dpoma_src[dpoma_offset], dpoma_length)
+dpoma_dpo       = dpoma_src - ta.sma(dpoma_src, dpoma_length)
+dpoma_dpo_f     = dpoma_dpo / dpoma_src
+dpoma_dpo_df    = dpoma_dpo_disp / dpoma_src
+dpoma_dpo_trend = dpoma_dpo_df - dpoma_dpo_f
+dpoma_dpo_cycle = dpoma_dpo_trend + dpoma_dpo_df
+dpoma_dpo_diff  = dpoma_dpo_cycle - dpoma_dpo_trend
+
+dpoma_ma1 = ta.ema(dpoma_src, dpoma_length)
+dpoma_ma2 = ta.sma(dpoma_ma1 + dpoma_ma1 * (dpoma_dpo_diff - dpoma_dpo_trend), dpoma_smoothing)
+
+plot(dpoma_show ? dpoma_ma2 : na, title="DPOMA MA", color=color.new(#4b6583, 0), linewidth=3)
+
+
+emama_group = "EMAMA"
+emama_show = input.bool(true, "Show EMAMA", group = emama_group)
+emama_src = input.source(hl2, title="Source", group=emama_group)
+emama_fl      = input.float(0.5, title="Fast Limit", step=0.01, group=emama_group)
+emama_sl      = input.float(0.05, title="Slow Limit", step=0.01, group=emama_group)
+emama_pa = input.bool(false, title="Mark crossover points", group=emama_group)
+emama_fr = input.bool(false, title="Fill MAMA/FAMA Region", group=emama_group)
+emama_ebc = input.bool(false, title="Enable Bar colors", group=emama_group)
+
+emama_sp = (4 * emama_src + 3 * emama_src[1] + 2 * emama_src[2] + emama_src[3]) / 10.0
+
+var float emama_p = 10.0
+
+emama_dt = (0.0962 * emama_sp + 0.5769 * nz(emama_sp[2]) - 0.5769 * nz(emama_sp[4]) - 0.0962 * nz(emama_sp[6])) * (0.075 * nz(emama_p[1], 10) + 0.54)
+emama_q1 = (0.0962 * emama_dt + 0.5769 * nz(emama_dt[2]) - 0.5769 * nz(emama_dt[4]) - 0.0962 * nz(emama_dt[6])) * (0.075 * nz(emama_p[1], 10) + 0.54)
+
+emama_i1  = nz(emama_dt[3])
+emama_jI  = (0.0962 * emama_i1 + 0.5769 * nz(emama_i1[2]) - 0.5769 * nz(emama_i1[4]) - 0.0962 * nz(emama_i1[6])) * (0.075 * nz(emama_p[1], 10) + 0.54)
+emama_jq  = (0.0962 * emama_q1 + 0.5769 * nz(emama_q1[2]) - 0.5769 * nz(emama_q1[4]) - 0.0962 * nz(emama_q1[6])) * (0.075 * nz(emama_p[1], 10) + 0.54)
+
+emama_i2_ = emama_i1 - emama_jq
+emama_q2_ = emama_q1 + emama_jI
+var float emama_i2 = 0.0
+emama_i2 := 0.2 * emama_i2_ + 0.8 * nz(emama_i2[1])
+var float emama_q2 = 0.0
+emama_q2 := 0.2 * emama_q2_ + 0.8 * nz(emama_q2[1])
+emama_re_ = emama_i2 * nz(emama_i2[1]) + emama_q2 * nz(emama_q2[1])
+emama_im_ = emama_i2 * nz(emama_q2[1]) - emama_q2 * nz(emama_i2[1])
+var float emama_re = 0.0
+emama_re := 0.2 * emama_re_ + 0.8 * nz(emama_re[1])
+var float emama_im = 0.0
+emama_im := 0.2 * emama_im_ + 0.8 * nz(emama_im[1])
+
+emama_p1 = (emama_im != 0 and emama_re != 0) ? 360 / math.atan(emama_im / emama_re) : nz(emama_p[1], 10)
+emama_p2 = emama_p1 > 1.5 * nz(emama_p[1], 10) ? 1.5 * nz(emama_p[1], 10) : (emama_p1 < 0.67 * nz(emama_p[1], 10) ? 0.67 * nz(emama_p[1], 10) : emama_p1)
+emama_p3 = emama_p2 < 6 ? 6 : (emama_p2 > 50 ? 50 : emama_p2)
+emama_p := 0.2 * emama_p3 + 0.8 * nz(emama_p[1], 10)
+var float emama_spp = emama_p
+emama_spp := 0.33 * emama_p + 0.67 * nz(emama_spp[1], emama_p)
+
+emama_phase   = math.atan(emama_q1 / emama_i1)
+emama_dphase_ = nz(emama_phase[1]) - emama_phase
+emama_dphase  = emama_dphase_ < 1 ? 1 : emama_dphase_
+emama_alpha_  = emama_fl / emama_dphase
+emama_alpha   = emama_alpha_ < emama_sl ? emama_sl : (emama_alpha_ > emama_fl ? emama_fl : emama_alpha_)
+
+var float emama_mama = emama_src
+emama_mama := emama_alpha * emama_src + (1 - emama_alpha) * nz(emama_mama[1], emama_src)
+var float emama_fama = emama_src
+emama_fama := 0.5 * emama_alpha * emama_mama + (1 - 0.5 * emama_alpha) * nz(emama_fama[1], emama_src)
+
+plotarrow(emama_show and emama_pa ? (ta.cross(emama_mama, emama_fama) ? (emama_mama < emama_fama ? -1 : 1) : na) : na, title="EMAMA Crossover Markers")
+
+emama_dummy_plot = plot(emama_show and emama_fr ? (emama_mama > emama_fama ? emama_mama : emama_fama) : na, style=plot.style_circles, color=color.gray, linewidth=0, title="EMAMA Dummy")
+emama_mama_plot  = plot(emama_show ? emama_mama : na, title="MAMA", color=color.red, linewidth=2)
+emama_fama_plot  = plot(emama_show ? emama_fama : na, title="FAMA", color=color.green, linewidth=2)
+fill(emama_dummy_plot, emama_mama_plot, color=emama_show and emama_fr ? color.new(color.red, 70) : na, title="EMAMA NegativeFill")
+fill(emama_dummy_plot, emama_fama_plot, color=emama_show and emama_fr ? color.new(color.green, 70) : na, title="EMAMA PositiveFill")
+
+emama_bc_EMA = emama_mama > emama_fama ? color.lime : color.red
+barcolor(emama_show and emama_ebc ? emama_bc_EMA : na)
+
+// =====================================================================================================================
+// Supertrend
+// =====================================================================================================================
+st_group = "Supertrend"
+st_show = input.bool(true, "Show Supertrend", group = st_group)
+st_atr_period = input.int(10, "ATR Length", group = st_group)
+st_factor = input.float(3.0, "Factor", group = st_group)
+
+[st_supertrend, st_direction] = ta.supertrend(st_factor, st_atr_period)
+
+st_color = st_direction < 0 ? color.green : color.red
+plot(st_show ? st_supertrend : na, "Supertrend", color = st_color, linewidth=2)
+
+// =====================================================================================================================
+// Parabolic SAR
+// =====================================================================================================================
+sar_group = "Parabolic SAR"
+sar_show = input.bool(true, "Show Parabolic SAR", group = sar_group)
+sar_start = input.float(0.02, "Start", group = sar_group)
+sar_inc = input.float(0.02, "Increment", group = sar_group)
+sar_max = input.float(0.2, "Maximum", group = sar_group)
+
+sar_val = ta.sar(sar_start, sar_inc, sar_max)
+
+plot(sar_show ? sar_val : na, "Parabolic SAR", color=color.blue, style=plot.style_cross, linewidth=2)
+
+// =====================================================================================================================
+// VWAP
+// =====================================================================================================================
+vwap_group = "VWAP"
+vwap_show = input.bool(true, "Show VWAP", group = vwap_group)
+vwap_src = input.source(hlc3, "Source", group = vwap_group)
+
+vwap_val = ta.vwap(vwap_src)
+
+plot(vwap_show ? vwap_val : na, "VWAP", color=color.new(color.blue, 70), linewidth=2)
+
+// =====================================================================================================================
+// HTF Trend Box
+// =====================================================================================================================
+htf_group = "HTF Trend Box"
+htf_show = input.bool(true, "Show HTF Trend Box", group = htf_group)
+htf1 = input.timeframe("15", "Timeframe 1", group = htf_group)
+htf2 = input.timeframe("60", "Timeframe 2", group = htf_group)
+htf3 = input.timeframe("240", "Timeframe 3", group = htf_group)
+htf_ema_fast_len = input.int(20, "Fast EMA Length", group = htf_group)
+htf_ema_slow_len = input.int(50, "Slow EMA Length", group = htf_group)
+
+f_get_htf_trend(tf) =>
+    fast_ema = request.security(syminfo.tickerid, tf, ta.ema(close, htf_ema_fast_len))
+    slow_ema = request.security(syminfo.tickerid, tf, ta.ema(close, htf_ema_slow_len))
+    fast_ema > slow_ema ? 1 : -1
+
+htf1_trend = f_get_htf_trend(htf1)
+htf2_trend = f_get_htf_trend(htf2)
+htf3_trend = f_get_htf_trend(htf3)
+
+var htf_table = table.new(position.top_right, 2, 4, bgcolor=color.new(color.gray, 80), border_width=1)
+
+if (htf_show)
+    table.cell(htf_table, 0, 0, "Timeframe", text_color=color.white, bgcolor=color.new(color.blue, 50))
+    table.cell(htf_table, 1, 0, "Trend", text_color=color.white, bgcolor=color.new(color.blue, 50))
+
+    table.cell(htf_table, 0, 1, htf1, text_color=color.white)
+    table.cell(htf_table, 1, 1, htf1_trend == 1 ? "Up" : "Down", text_color=color.white, bgcolor=htf1_trend == 1 ? color.new(color.green, 50) : color.new(color.red, 50))
+
+    table.cell(htf_table, 0, 2, htf2, text_color=color.white)
+    table.cell(htf_table, 1, 2, htf2_trend == 1 ? "Up" : "Down", text_color=color.white, bgcolor=htf2_trend == 1 ? color.new(color.green, 50) : color.new(color.red, 50))
+
+    table.cell(htf_table, 0, 3, htf3, text_color=color.white)
+    table.cell(htf_table, 1, 3, htf3_trend == 1 ? "Up" : "Down", text_color=color.white, bgcolor=htf3_trend == 1 ? color.new(color.green, 50) : color.new(color.red, 50))
