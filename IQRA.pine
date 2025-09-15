@@ -221,26 +221,114 @@ htf3 = input.timeframe("240", "Timeframe 3", group = htf_group)
 htf_ema_fast_len = input.int(20, "Fast EMA Length", group = htf_group)
 htf_ema_slow_len = input.int(50, "Slow EMA Length", group = htf_group)
 
+// =====================================================================================================================
+// HTF Indicator Settings
+// =====================================================================================================================
+htf_inds_group = "HTF Indicator Settings"
+htf_stoch_rsi_k = input.int(3, "Stoch RSI K", group = htf_inds_group)
+htf_stoch_rsi_d = input.int(3, "Stoch RSI D", group = htf_inds_group)
+htf_stoch_rsi_rsi_len = input.int(14, "Stoch RSI RSI Length", group = htf_inds_group)
+htf_stoch_rsi_stoch_len = input.int(14, "Stoch RSI Stoch Length", group = htf_inds_group)
+
+htf_macd_fast_len = input.int(12, "MACD Fast Length", group = htf_inds_group)
+htf_macd_slow_len = input.int(26, "MACD Slow Length", group = htf_inds_group)
+htf_macd_signal_len = input.int(9, "MACD Signal Length", group = htf_inds_group)
+
+htf_willr_len = input.int(14, "Williams %R Length", group = htf_inds_group)
+
+htf_dmi_len = input.int(14, "DMI/ADX Length", group = htf_inds_group)
+
+htf_cci_len = input.int(20, "CCI Length", group = htf_inds_group)
+
+f_calculate_indicators() =>
+    // EMA Trend
+    fast_ema = ta.ema(close, htf_ema_fast_len)
+    slow_ema = ta.ema(close, htf_ema_slow_len)
+    ema_trend = fast_ema > slow_ema ? 1 : -1
+
+    // Stochastic RSI
+    rsi = ta.rsi(close, htf_stoch_rsi_rsi_len)
+    stoch_of_rsi = ta.stoch(rsi, rsi, rsi, htf_stoch_rsi_stoch_len)
+    k = ta.sma(stoch_of_rsi, htf_stoch_rsi_k)
+    d = ta.sma(k, htf_stoch_rsi_d)
+    stoch_rsi_trend = k > d ? 1 : -1
+
+    // MACD
+    [macd_line, signal_line, hist] = ta.macd(close, htf_macd_fast_len, htf_macd_slow_len, htf_macd_signal_len)
+    macd_trend = macd_line > signal_line ? 1 : -1
+
+    // Williams %R
+    willr = ta.willr(htf_willr_len)
+    willr_trend = willr > -20 ? -1 : willr < -80 ? 1 : 0
+
+    // DMI/ADX
+    [di_plus, di_minus, adx] = ta.dmi(htf_dmi_len, htf_dmi_len)
+    dmi_trend = di_plus > di_minus ? 1 : -1
+
+    // CCI
+    cci = ta.cci(close, htf_cci_len)
+    cci_trend = cci > 100 ? 1 : cci < -100 ? -1 : 0
+
+    [ema_trend, k, stoch_rsi_trend, hist, macd_trend, willr, willr_trend, adx, di_plus, di_minus, dmi_trend, cci, cci_trend]
+
 f_get_htf_trend(tf) =>
-    fast_ema = request.security(syminfo.tickerid, tf, ta.ema(close, htf_ema_fast_len))
-    slow_ema = request.security(syminfo.tickerid, tf, ta.ema(close, htf_ema_slow_len))
-    fast_ema > slow_ema ? 1 : -1
+    request.security(syminfo.tickerid, tf, f_calculate_indicators(), gaps=barmerge.gaps_on)
 
-htf1_trend = f_get_htf_trend(htf1)
-htf2_trend = f_get_htf_trend(htf2)
-htf3_trend = f_get_htf_trend(htf3)
+[htf1_ema_trend, htf1_k, htf1_stoch_rsi_trend, htf1_hist, htf1_macd_trend, htf1_willr, htf1_willr_trend, htf1_adx, htf1_di_plus, htf1_di_minus, htf1_dmi_trend, htf1_cci, htf1_cci_trend] = f_get_htf_trend(htf1)
+[htf2_ema_trend, htf2_k, htf2_stoch_rsi_trend, htf2_hist, htf2_macd_trend, htf2_willr, htf2_willr_trend, htf2_adx, htf2_di_plus, htf2_di_minus, htf2_dmi_trend, htf2_cci, htf2_cci_trend] = f_get_htf_trend(htf2)
+[htf3_ema_trend, htf3_k, htf3_stoch_rsi_trend, htf3_hist, htf3_macd_trend, htf3_willr, htf3_willr_trend, htf3_adx, htf3_di_plus, htf3_di_minus, htf3_dmi_trend, htf3_cci, htf3_cci_trend] = f_get_htf_trend(htf3)
 
-var htf_table = table.new(position.top_right, 2, 4, bgcolor=color.new(color.gray, 80), border_width=1)
+var htf_table = table.new(position.top_right, 9, 4, bgcolor=color.new(color.gray, 80), border_width=1)
+
+f_get_color(trend) =>
+    if trend == 1
+        color.new(color.green, 50)
+    else if trend == -1
+        color.new(color.red, 50)
+    else
+        color.new(color.black, 50)
 
 if (htf_show)
+    // Headers
     table.cell(htf_table, 0, 0, "Timeframe", text_color=color.white, bgcolor=color.new(color.blue, 50))
-    table.cell(htf_table, 1, 0, "Trend", text_color=color.white, bgcolor=color.new(color.blue, 50))
+    table.cell(htf_table, 1, 0, "EMA Trend", text_color=color.white, bgcolor=color.new(color.blue, 50))
+    table.cell(htf_table, 2, 0, "Stoch RSI", text_color=color.white, bgcolor=color.new(color.blue, 50))
+    table.cell(htf_table, 3, 0, "MACD Hist", text_color=color.white, bgcolor=color.new(color.blue, 50))
+    table.cell(htf_table, 4, 0, "Williams %R", text_color=color.white, bgcolor=color.new(color.blue, 50))
+    table.cell(htf_table, 5, 0, "ADX", text_color=color.white, bgcolor=color.new(color.blue, 50))
+    table.cell(htf_table, 6, 0, "+DI", text_color=color.white, bgcolor=color.new(color.blue, 50))
+    table.cell(htf_table, 7, 0, "-DI", text_color=color.white, bgcolor=color.new(color.blue, 50))
+    table.cell(htf_table, 8, 0, "CCI", text_color=color.white, bgcolor=color.new(color.blue, 50))
 
+    // Row 1: HTF 1
     table.cell(htf_table, 0, 1, htf1, text_color=color.white)
-    table.cell(htf_table, 1, 1, htf1_trend == 1 ? "Up" : "Down", text_color=color.white, bgcolor=htf1_trend == 1 ? color.new(color.green, 50) : color.new(color.red, 50))
+    table.cell(htf_table, 1, 1, htf1_ema_trend == 1 ? "Up" : "Down", text_color=color.white, bgcolor=f_get_color(htf1_ema_trend))
+    table.cell(htf_table, 2, 1, str.tostring(htf1_k, "#.##"), text_color=color.white, bgcolor=f_get_color(htf1_stoch_rsi_trend))
+    table.cell(htf_table, 3, 1, str.tostring(htf1_hist, "#.####"), text_color=color.white, bgcolor=f_get_color(htf1_macd_trend))
+    table.cell(htf_table, 4, 1, str.tostring(htf1_willr, "#.##"), text_color=color.white, bgcolor=f_get_color(htf1_willr_trend))
+    table.cell(htf_table, 5, 1, str.tostring(htf1_adx, "#.##"), text_color=color.white)
+    table.cell(htf_table, 6, 1, str.tostring(htf1_di_plus, "#.##"), text_color=color.white, bgcolor=f_get_color(htf1_dmi_trend))
+    table.cell(htf_table, 7, 1, str.tostring(htf1_di_minus, "#.##"), text_color=color.white, bgcolor=f_get_color(htf1_dmi_trend == 1 ? -1 : 1))
+    table.cell(htf_table, 8, 1, str.tostring(htf1_cci, "#.##"), text_color=color.white, bgcolor=f_get_color(htf1_cci_trend))
 
+    // Row 2: HTF 2
     table.cell(htf_table, 0, 2, htf2, text_color=color.white)
-    table.cell(htf_table, 1, 2, htf2_trend == 1 ? "Up" : "Down", text_color=color.white, bgcolor=htf2_trend == 1 ? color.new(color.green, 50) : color.new(color.red, 50))
+    table.cell(htf_table, 1, 2, htf2_ema_trend == 1 ? "Up" : "Down", text_color=color.white, bgcolor=f_get_color(htf2_ema_trend))
+    table.cell(htf_table, 2, 2, str.tostring(htf2_k, "#.##"), text_color=color.white, bgcolor=f_get_color(htf2_stoch_rsi_trend))
+    table.cell(htf_table, 3, 2, str.tostring(htf2_hist, "#.####"), text_color=color.white, bgcolor=f_get_color(htf2_macd_trend))
+    table.cell(htf_table, 4, 2, str.tostring(htf2_willr, "#.##"), text_color=color.white, bgcolor=f_get_color(htf2_willr_trend))
+    table.cell(htf_table, 5, 2, str.tostring(htf2_adx, "#.##"), text_color=color.white)
+    table.cell(htf_table, 6, 2, str.tostring(htf2_di_plus, "#.##"), text_color=color.white, bgcolor=f_get_color(htf2_dmi_trend))
+    table.cell(htf_table, 7, 2, str.tostring(htf2_di_minus, "#.##"), text_color=color.white, bgcolor=f_get_color(htf2_dmi_trend == 1 ? -1 : 1))
+    table.cell(htf_table, 8, 2, str.tostring(htf2_cci, "#.##"), text_color=color.white, bgcolor=f_get_color(htf2_cci_trend))
 
+    // Row 3: HTF 3
     table.cell(htf_table, 0, 3, htf3, text_color=color.white)
-    table.cell(htf_table, 1, 3, htf3_trend == 1 ? "Up" : "Down", text_color=color.white, bgcolor=htf3_trend == 1 ? color.new(color.green, 50) : color.new(color.red, 50))
+    table.cell(htf_table, 1, 3, htf3_ema_trend == 1 ? "Up" : "Down", text_color=color.white, bgcolor=f_get_color(htf3_ema_trend))
+    table.cell(htf_table, 2, 3, str.tostring(htf3_k, "#.##"), text_color=color.white, bgcolor=f_get_color(htf3_stoch_rsi_trend))
+    table.cell(htf_table, 3, 3, str.tostring(htf3_hist, "#.####"), text_color=color.white, bgcolor=f_get_color(htf3_macd_trend))
+    table.cell(htf_table, 4, 3, str.tostring(htf3_willr, "#.##"), text_color=color.white, bgcolor=f_get_color(htf3_willr_trend))
+    table.cell(htf_table, 5, 3, str.tostring(htf3_adx, "#.##"), text_color=color.white)
+    table.cell(htf_table, 6, 3, str.tostring(htf3_di_plus, "#.##"), text_color=color.white, bgcolor=f_get_color(htf3_dmi_trend))
+    table.cell(htf_table, 7, 3, str.tostring(htf3_di_minus, "#.##"), text_color=color.white, bgcolor=f_get_color(htf3_dmi_trend == 1 ? -1 : 1))
+    table.cell(htf_table, 8, 3, str.tostring(htf3_cci, "#.##"), text_color=color.white, bgcolor=f_get_color(htf3_cci_trend))
