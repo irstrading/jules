@@ -45,7 +45,7 @@ if show_oscillator
     var bool OSC_VOLATILITY_MODE_ON = osc_mode == "Volatility"
 
 
-    osc_PhiSmoother(series float source, simple int length, simple float phase=3.7)=>
+    osc_PhiSmoother(source, length, phase=3.7)=>
         var array<float> coefs = na
         var int length_1 = length - 1
         var float      W = 0.0
@@ -75,40 +75,37 @@ if show_oscillator
             E += coefs.get(i) * sma2[i]
         E / W
 
-    osc_ema(series float source, simple float length)=>
+    osc_ema(source, length)=>
         float alpha = 2.0 / (length + 1)
         var float smoothed = na
         smoothed := alpha * source + (1.0 - alpha) * nz(smoothed[1], source)
 
-    osc_dema(series float source, simple float length)=>
+    osc_dema(source, length)=>
         float ema1 = osc_ema(source, length)
         float ema2 = osc_ema(  ema1, length)
         2.0 * ema1 - ema2
 
-    osc_tema(series float source, simple float length)=>
+    osc_tema(source, length)=>
         float ema1 = osc_ema(source, length)
         float ema2 = osc_ema(  ema1, length)
         float ema3 = osc_ema(  ema2, length)
         (ema1 - ema2) * 3.0 + ema3
 
-    osc_wma(series float source, simple int length)=>
+    osc_wma(source, length)=>
         float weight_sum = length * 0.5 * (length + 1)
         float sum = 0.0
         for int i=0 to length - 1
             sum += source[i] * (length - i)
         sum / weight_sum
 
-    osc_sma(series float source, simple int length)=>
+    osc_sma(source, length)=>
         float sum = ta.cum(source)
         if bar_index < length - 1
             sum / (bar_index + 1)
         else
             (sum - sum[length]) / length
 
-    osc_filter(series float source,
-           simple int   length,
-           simple float  phase,
-           simple string style)=>
+    osc_filter(source, length, phase, style)=>
         if length > 1
             switch style
                 "PhiSmoother" => osc_PhiSmoother(source, length, phase)
@@ -120,7 +117,7 @@ if show_oscillator
         else
             source
 
-    osc_get_score(series array<float> source)=>
+    osc_get_score(array<float> source)=>
         array<float> scores = array.new<float>()
         for int i=0 to source.size() - 1
             float current = source.get(i)
@@ -136,7 +133,7 @@ if show_oscillator
             scores.push(score_sum)
         scores
 
-    osc_net_score_func(series array<float> scores)=>
+    osc_net_score_func(array<float> scores)=>
         int   value    = scores.size() - 1
         float netScore = ((scores.avg() + value) / (value * 2.0) - 0.5) * 200.0
         netScore
