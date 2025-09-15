@@ -164,7 +164,7 @@ emama_fama := 0.5 * emama_alpha * emama_mama + (1 - 0.5 * emama_alpha) * nz(emam
 
 plotarrow(emama_show and emama_pa ? (ta.cross(emama_mama, emama_fama) ? (emama_mama < emama_fama ? -1 : 1) : na) : na, title="EMAMA Crossover Markers")
 
-emama_dummy_plot = plot(emama_show and emama_fr ? (emama_mama > emama_fama ? emama_mama : emama_fama) : na, style=plot.style_circles, color=color.gray, linewidth=0, title="EMAMA Dummy")
+emama_dummy_plot = plot(emama_show and emama_fr ? (emama_mama > emama_fama ? emama_mama : emama_fama) : na, style=plot.style_circles, color=na, title="EMAMA Dummy")
 emama_mama_plot  = plot(emama_show ? emama_mama : na, title="MAMA", color=color.red, linewidth=2)
 emama_fama_plot  = plot(emama_show ? emama_fama : na, title="FAMA", color=color.green, linewidth=2)
 fill(emama_dummy_plot, emama_mama_plot, color=emama_show and emama_fr ? color.new(color.red, 70) : na, title="EMAMA NegativeFill")
@@ -258,7 +258,7 @@ f_calculate_indicators() =>
     macd_trend = macd_line > signal_line ? 1 : -1
 
     // Williams %R
-    willr = ta.willr(htf_willr_len)
+    willr = ta.wpr(htf_willr_len)
     willr_trend = willr > -20 ? -1 : willr < -80 ? 1 : 0
 
     // DMI/ADX
