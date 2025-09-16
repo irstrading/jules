@@ -1,0 +1,84 @@
+//@version=5
+indicator("Multi-Indicator Suite [Chart]", "MIS Chart", overlay=true)
+
+//##############################################################################
+//#                             UTILITY FUNCTIONS                              #
+//##############################################################################
+
+ema(series float source, simple float length)=>
+    float alpha = 2.0 / (length + 1)
+    var float smoothed = na
+    smoothed := alpha * source + (1.0 - alpha) * nz(smoothed[1], source)
+
+wma(series float source, simple int length)=>
+    float weight_sum = length * 0.5 * (length + 1)
+    float sum = 0.0
+    for int i=0 to length - 1
+        sum += source[i] * (length - i)
+    sum / weight_sum
+
+sma(series float source, simple int length)=>
+    ta.sma(source, length)
+
+tema(series float source, simple float length)=>
+    float ema1 = ema(source, length)
+    float ema2 = ema(  ema1, length)
+    float ema3 = ema(  ema2, length)
+    (ema1 - ema2) * 3.0 + ema3
+
+//##############################################################################
+//#                                SUPERTREND                                  #
+//##############################################################################
+string st_group = "Supertrend"
+bool show_st = input.bool(true, "Show Supertrend", group=st_group)
+int atrPeriod = input.int(10, 'ATR Length', minval = 1, group=st_group)
+float factor = input.float(2.5, 'Factor', minval = 0.01, step = 0.01, group=st_group)
+
+[supertrend, direction] = ta.supertrend(factor, atrPeriod)
+
+st_color = direction < 0 ? color.green : color.red
+plot(show_st ? supertrend : na, "Supertrend", color=st_color, style=plot.style_linebr)
+
+//##############################################################################
+//#                                SWING SIGNALS                               #
+//##############################################################################
+string swing_group = "Swing Signals"
+bool show_swing = input.bool(true, "Show Swing Signals", group=swing_group)
+string swing_ma_type = input.string("WMA", "Swing MA Type", group=swing_group, options=["SMA", "EMA", "WMA", "TEMA"])
+int swing_len = input.int(15, "Swing MA Length", group=swing_group, minval=1)
+float  source = input.source(close, "Source", group=swing_group)
+
+f_swing_ma(src, len, type) =>
+    switch type
+        "SMA" => sma(src, len)
+        "EMA" => ema(src, len)
+        "WMA" => wma(src, len)
+        "TEMA" => tema(src, len)
+
+swing_ma = f_swing_ma(source, swing_len, swing_ma_type)
+uptrend = swing_ma > swing_ma[1]
+
+swing_up = uptrend and not uptrend[1]
+swing_down = not uptrend and uptrend[1]
+
+plotshape(show_swing and swing_up, title='Swing Up', style=shape.triangleup, location=location.belowbar, size=size.small, color=color.new(color.green, 40))
+plotshape(show_swing and swing_down, title='Swing Down', style=shape.triangledown, location=location.abovebar, size=size.small, color=color.new(color.red, 40))
+
+alertcondition(show_swing and swing_up, 'Swing Up', 'Swing Up Detected!')
+alertcondition(show_swing and swing_down, 'Swing Down', 'Swing Down Detected!')
+
+//##############################################################################
+//#                      DETRENDED PRICE OSCILLATOR (DPO) PEAKS                #
+//##############################################################################
+string dpo_group = "DPO Peaks"
+bool show_dpo_peaks = input.bool(true, "Show DPO Peaks", group=dpo_group)
+int dpo_len = input.int(21, "DPO Length", group=dpo_group, minval=1)
+
+dpo_offset = dpo_len / 2 + 1
+dpo = source[dpo_offset] - ta.sma(source, dpo_len)
+
+dpo_top = ta.pivothigh(dpo, 5, 5)
+dpo_bottom = ta.pivotlow(dpo, 5, 5)
+
+plotshape(show_dpo_peaks and dpo_top, "DPO Top", shape.triangledown, location.abovebar, color.new(color.maroon, 0), offset=-dpo_offset)
+plotshape(show_dpo_peaks and dpo_bottom, "DPO Bottom", shape.triangleup, location.belowbar, color.new(color.olive, 0), offset=-dpo_offset)

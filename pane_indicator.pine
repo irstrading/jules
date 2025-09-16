@@ -1,0 +1,324 @@
+//@version=5
+indicator("Multi-Indicator Suite [Pane]", "MIS Pane", false, max_lines_count=500)
+
+//##############################################################################
+//#                             UTILITY FUNCTIONS                              #
+//##############################################################################
+
+PhiSmoother(series float source, simple int length, simple float phase=3.7)=>
+    var array<float> coefs = na
+    var int length_1 = length - 1
+    var float      W = 0.0
+    if na(coefs)
+        coefs := array.new<float>()
+        const float SQRT_PIx2  = math.sqrt(2.0 * math.pi)
+        const float MULTIPLIER = -0.5 / 0.93
+        var float     length_2 = length * 0.52353
+        for int i=0 to length_1
+            float alpha = (i + phase - length_2) * MULTIPLIER
+            float  beta = 1.0 / (0.2316419 * math.abs(alpha) + 1.0)
+            float   phi = (math.exp(math.pow(alpha, 2) * -0.5)
+                         *-0.398942280) * beta *
+                         ( 0.319381530  + beta *
+                         (-0.356563782  + beta *
+                         ( 1.781477937  + beta *
+                         (-1.821255978  + beta
+                         * 1.330274429)))) + 1.011
+            if alpha < 0.0
+                phi := 1.0 - phi
+            float weight = phi / SQRT_PIx2
+            coefs.push(weight)
+            W += weight
+    float sma2 = math.avg(source, nz(source[1], source))
+    float E = 0.0
+    for int i=0 to length_1
+        E += coefs.get(i) * sma2[i]
+    E / W
+
+ema(series float source, simple float length)=>
+    float alpha = 2.0 / (length + 1)
+    var float smoothed = na
+    smoothed := alpha * source + (1.0 - alpha) * nz(smoothed[1], source)
+
+dema(series float source, simple float length)=>
+    float ema1 = ema(source, length)
+    float ema2 = ema(  ema1, length)
+    2.0 * ema1 - ema2
+
+tema(series float source, simple float length)=>
+    float ema1 = ema(source, length)
+    float ema2 = ema(  ema1, length)
+    float ema3 = ema(  ema2, length)
+    (ema1 - ema2) * 3.0 + ema3
+
+wma(series float source, simple int length)=>
+    float weight_sum = length * 0.5 * (length + 1)
+    float sum = 0.0
+    for int i=0 to length - 1
+        sum += source[i] * (length - i)
+    sum / weight_sum
+
+sma(series float source, simple int length)=>
+    float sum = ta.cum(source)
+    if bar_index < length - 1
+        sum / (bar_index + 1)
+    else
+        (sum - sum[length]) / length
+
+filter(series float source,
+       simple int   length,
+       simple float  phase,
+       simple string style)=>
+    if length > 1
+        switch style
+            "PhiSmoother" => PhiSmoother(source, length, phase)
+            "EMA"         =>         ema(source, length)
+            "DEMA"        =>        dema(source, length)
+            "TEMA"        =>        tema(source, length)
+            "WMA"         =>         wma(source, length)
+            =>                       sma(source, length) // "SMA"
+    else
+        source
+
+//##############################################################################
+//#                            OSCILLATOR INDICATOR                            #
+//##############################################################################
+string osc_group = "Composite Oscillator"
+bool show_osc = input.bool(true, "Show Composite Oscillator", group = osc_group)
+float  source = input.source(           close,                 "Source", group=osc_group)
+string   mode = input.string("Trend Strength", "Composite Cluster Mode", group=osc_group, options=["Trend Strength", "Volatility"])
+string filter_type = input.string(   "PhiSmoother",         "Cluster Filter", group=osc_group, options=["PhiSmoother", "EMA", "DEMA", "TEMA", "WMA", "SMA"])
+float   phase = input.float (             3.7,   "PhiSmoother Phase", group=osc_group,  minval=0.0, step=0.1)
+
+string cluster = "Cluster Options"
+int    spacing = input.int(3,    "Cluster Dispersion", group=osc_group, minval=1, maxval=10)
+int upper_trim = input.int(0, "Cluster Trim - Upper:", group=osc_group, inline="trim",  minval=0, maxval=31)
+int lower_trim = input.int(0,              "Lower:", group=osc_group, inline="trim",  minval=0, maxval=31)
+
+string output           = "Composite Post Smoothing"
+string post_smooth_filt = input.string("PhiSmoother", "PostSmooth - Filter:", group=osc_group, inline="post", options=["PhiSmoother", "EMA", "DEMA", "TEMA", "WMA", "SMA"])
+int    post_smooth_len  = input.int   (            1,            "Length:", group=osc_group, inline="post",  minval=1)
+
+string signal        = "Composite Signal Settings"
+string signal_filter = input.string("PhiSmoother", "Signal - Filter:", group=osc_group, inline="signal", options=["PhiSmoother", "EMA", "DEMA", "TEMA", "WMA", "SMA"])
+int    signal_length = input.int   (           20,        "Length:", group=osc_group, inline="signal",  minval=1)
+color  signal_color  = input.color (    color.white,     "Filter Color", group=osc_group)
+
+string threshold = "Threshold Levels"
+float upperLevel = input.float( 75.00, "Levels - Upper:", group=osc_group, inline="level", minval=  1.0, maxval=99.0, step=2.0)
+float lowerLevel = input.float(-75.00,        "Lower:", group=osc_group, inline="level", minval=-99.0, maxval=-1.0, step=2.0)
+
+string colors            = "Coloring Preferences"
+bool  fill_bg            = input.bool (     true, "Fill Background", group=osc_group, inline= "fill")
+int   fill_alpha         = input.int  (       85,                     "", group=osc_group, inline= "fill", minval=0, maxval=100)
+color rising_bullish     = input.color(#FFCC00,     "Bullish Color", group=osc_group, inline= "bull")
+color falling_bearish    = input.color(#5500CC,     "Bearish Color", group=osc_group, inline= "bear")
+
+var bool VOLATILITY_MODE_ON = mode == "Volatility"
+
+method get_score(series array<float> src)=>
+    array<float> scores = array.new<float>()
+    for int i=0 to src.size() - 1
+        float current = src.get(i)
+        int score_sum = 0
+        for j = 0 to src.size() - 1
+            float check = src.get(j)
+            int polarity = i < j ? 1 : -1
+            if i != j
+                if current > check
+                    score_sum += polarity
+                else
+                    score_sum -= polarity
+        scores.push(score_sum)
+    scores
+
+method net_score(series array<float> scores)=>
+    int   value    = scores.size() - 1
+    float netScore = ((scores.avg() + value) / (value * 2.0) - 0.5) * 200.0
+    netScore
+
+array<float> filter_cluster = array.new<float>(34)
+if(show_osc)
+    filter_cluster.set( 0, source)
+    filter_cluster.set( 1, filter(source, 1  * spacing, phase, filter_type))
+    filter_cluster.set( 2, filter(source, 2  * spacing, phase, filter_type))
+    filter_cluster.set( 3, filter(source, 3  * spacing, phase, filter_type))
+    filter_cluster.set( 4, filter(source, 4  * spacing, phase, filter_type))
+    filter_cluster.set( 5, filter(source, 5  * spacing, phase, filter_type))
+    filter_cluster.set( 6, filter(source, 6  * spacing, phase, filter_type))
+    filter_cluster.set( 7, filter(source, 7  * spacing, phase, filter_type))
+    filter_cluster.set( 8, filter(source, 8  * spacing, phase, filter_type))
+    filter_cluster.set( 9, filter(source, 9  * spacing, phase, filter_type))
+    filter_cluster.set(10, filter(source, 10 * spacing, phase, filter_type))
+    filter_cluster.set(11, filter(source, 11 * spacing, phase, filter_type))
+    filter_cluster.set(12, filter(source, 12 * spacing, phase, filter_type))
+    filter_cluster.set(13, filter(source, 13 * spacing, phase, filter_type))
+    filter_cluster.set(14, filter(source, 14 * spacing, phase, filter_type))
+    filter_cluster.set(15, filter(source, 15 * spacing, phase, filter_type))
+    filter_cluster.set(16, filter(source, 16 * spacing, phase, filter_type))
+    filter_cluster.set(17, filter(source, 17 * spacing, phase, filter_type))
+    filter_cluster.set(18, filter(source, 18 * spacing, phase, filter_type))
+    filter_cluster.set(19, filter(source, 19 * spacing, phase, filter_type))
+    filter_cluster.set(20, filter(source, 20 * spacing, phase, filter_type))
+    filter_cluster.set(21, filter(source, 21 * spacing, phase, filter_type))
+    filter_cluster.set(22, filter(source, 22 * spacing, phase, filter_type))
+    filter_cluster.set(23, filter(source, 23 * spacing, phase, filter_type))
+    filter_cluster.set(24, filter(source, 24 * spacing, phase, filter_type))
+    filter_cluster.set(25, filter(source, 25 * spacing, phase, filter_type))
+    filter_cluster.set(26, filter(source, 26 * spacing, phase, filter_type))
+    filter_cluster.set(27, filter(source, 27 * spacing, phase, filter_type))
+    filter_cluster.set(28, filter(source, 28 * spacing, phase, filter_type))
+    filter_cluster.set(29, filter(source, 29 * spacing, phase, filter_type))
+    filter_cluster.set(30, filter(source, 30 * spacing, phase, filter_type))
+    filter_cluster.set(31, filter(source, 31 * spacing, phase, filter_type))
+    filter_cluster.set(32, filter(source, 32 * spacing, phase, filter_type))
+
+    if upper_trim > 0
+        for int i=0 to math.min(upper_trim - 1, filter_cluster.size() - 1)
+            if  filter_cluster.size() > 2
+                filter_cluster.shift()
+            else
+                break
+    if lower_trim > 0
+        for int i=0 to math.min(lower_trim - 1, filter_cluster.size() - 1)
+            if  filter_cluster.size() > 2
+                filter_cluster.pop()
+            else
+                break
+
+float ribbon_max   = filter_cluster.max()
+float ribbon_min   = filter_cluster.min()
+float ribbon_width = ribbon_max - ribbon_min
+float ribbon_rank  = VOLATILITY_MODE_ON ? nz(ribbon_width / math.avg(ribbon_max, ribbon_min)) : 1
+
+array<float> score = filter_cluster.get_score()
+float    net_score = filter(score.net_score() * ribbon_rank, post_smooth_len, 3.7, post_smooth_filt)
+float signal_value = signal_length < 2 ? na : filter(ta.sma(net_score, 2), signal_length, 3.7, signal_filter)
+
+const color invisible = #00000000
+top    = hline(VOLATILITY_MODE_ON ? na :      100.0,    "Top",       #FF0000, display=show_osc ? display.all : display.none)
+upper  = hline(VOLATILITY_MODE_ON ? na : upperLevel, "+Level",  rising_bullish, hline.style_dotted, 2, display=show_osc ? display.all : display.none)
+center = hline(                                 0.0, "Center",       #CCCCCC, display=show_osc ? display.all : display.none)
+lower  = hline(VOLATILITY_MODE_ON ? na : lowerLevel, "+Level", falling_bearish, hline.style_dotted, 2, display=show_osc ? display.all : display.none)
+bottom = hline(VOLATILITY_MODE_ON ? na :     -100.0, "Bottom",       #00FF00, display=show_osc ? display.all : display.none)
+
+fill(   top, upper, color=show_osc ? color.new(#800000, 80) : invisible)
+fill(center, upper, color=show_osc and fill_bg ? color.new(rising_bullish, fill_alpha) : invisible)
+fill(center, lower, color=show_osc and fill_bg ? color.new(falling_bearish, fill_alpha) : invisible)
+fill(bottom, lower, color=show_osc ? color.new(#008000, 80) : invisible)
+
+color1 = net_score > signal_value ? #00FF00 : #FF0000
+plot(show_osc ? net_score : na, "Score", color1, 3)
+plot(show_osc ? signal_value : na, "Signal", signal_color, 1)
+
+//##############################################################################
+//#                           SQUEEZE MOMENTUM                                 #
+//##############################################################################
+string sqz_group = "Squeeze Momentum"
+bool show_sqz = input.bool(true, "Show Squeeze Momentum", group=sqz_group)
+int bbLength = input.int(20, 'Bollinger Bands Length', minval = 1, group=sqz_group)
+float bbMult = input.float(2, 'Bollinger Bands MultFactor', step = 0.25, group=sqz_group)
+int kcLength = input.int(20, 'Keltner\'s Channel Length', group=sqz_group)
+float kcMult = input.float(1.5, 'Keltner\'s Channel MultFactor', step = 0.25, group=sqz_group)
+bool useTrueRange = input.bool(true, 'Use TrueRange (KC)', group=sqz_group)
+float sqz_upperThreshold = input.float(0.0, title = 'Squeeze Upper Threshold', group=sqz_group)
+float sqz_lowerThreshold = input.float(0.0, title = 'Squeeze Lower Threshold', group=sqz_group)
+
+// Squeeze
+basis = ta.sma(source, bbLength)
+dev = bbMult * ta.stdev(source, bbLength)
+bbUpper = basis + dev
+bbLower = basis - dev
+ma = ta.sma(source, kcLength)
+trRange = useTrueRange ? ta.tr : high - low
+rangema = ta.sma(trRange, kcLength)
+kcUpper = ma + rangema * kcMult
+kcLower = ma - rangema * kcMult
+
+sqzOn = bbLower > kcLower and bbUpper < kcUpper
+sqzOff = bbLower < kcLower and bbUpper > kcUpper
+noSqz = sqzOn == false and sqzOff == false
+
+val = ta.linreg(source - math.avg(math.avg(ta.highest(high, kcLength), ta.lowest(low, kcLength)), ta.sma(source, kcLength)), kcLength, 0)
+sqz_dir = val
+
+segitigaUp = sqzOff and sqz_dir > sqz_dir[1] and sqz_dir >= sqz_upperThreshold
+segitigaDown = sqzOff and sqz_dir < sqz_dir[1] and sqz_dir <= sqz_lowerThreshold
+
+plotshape(show_sqz and (sqzOn or noSqz), 'In Squeeze', shape.diamond, location.top, color.new(color.gray, 50), size=size.tiny)
+plotshape(show_sqz and segitigaUp, 'Squeeze Release Up', shape.arrowup, location.bottom, color.new(color.green, 0), size=size.small)
+plotshape(show_sqz and segitigaDown, 'Squeeze Release Down', shape.arrowdown, location.top, color.new(color.red, 0), size=size.small)
+
+alertcondition(show_sqz and segitigaUp, 'Squeeze Release Up', 'Squeeze Release Up')
+alertcondition(show_sqz and segitigaDown, 'Squeeze Release Down', 'Squeeze Release Down')
+
+//##############################################################################
+//#                           ON-BALANCE VOLUME (OBV)                          #
+//##############################################################################
+string obv_group = "On-Balance Volume (OBV)"
+bool show_obv = input.bool(true, "Show OBV", group=obv_group)
+string obv_ma_type = input.string("None", "OBV MA Type", group=obv_group, options=["None", "SMA", "EMA", "WMA"])
+int obv_ma_len = input.int(20, "OBV MA Length", group=obv_group, minval=1)
+
+obv = ta.obv
+f_obv_ma(src, len, type) =>
+    switch type
+        "SMA" => sma(src, len)
+        "EMA" => ema(src, len)
+        "WMA" => wma(src, len)
+obv_ma = f_obv_ma(obv, obv_ma_len, obv_ma_type)
+obv_plot = obv_ma_type == "None" ? obv : obv_ma
+plot(show_obv ? obv_plot : na, "OBV", color.new(color.blue, 0), style=plot.style_area, transp=80)
+
+//##############################################################################
+//#                    DETRENDED PRICE OSCILLATOR (DPO)                        #
+//##############################################################################
+string dpo_group = "Detrended Price Oscillator (DPO)"
+bool show_dpo = input.bool(true, "Show DPO Line", group=dpo_group)
+int dpo_len = input.int(21, "DPO Length", group=dpo_group, minval=1)
+
+dpo_offset = dpo_len / 2 + 1
+dpo = source[dpo_offset] - ta.sma(source, dpo_len)
+
+plot(show_dpo ? dpo : na, "DPO", color.new(color.orange, 0))
+
+//##############################################################################
+//#                           VWAP Z-SCORE                                     #
+//##############################################################################
+string vwap_z_group = "VWAP Z-Score"
+bool show_vwap_z = input.bool(true, "Show VWAP Z-Score", group=vwap_z_group)
+int zscore_len = input.int(20, title="Z-Score Length", group=vwap_z_group)
+float z_upper_top = input.float(3.0, title="Upper Threshold Top", group=vwap_z_group)
+float z_upper_bottom = input.float(2.5, title="Upper Threshold Bottom", group=vwap_z_group)
+float z_lower_top = input.float(-3.0, title="Lower Threshold Top", group=vwap_z_group)
+float z_lower_bottom = input.float(-2.5, title="Lower Threshold Bottom", group=vwap_z_group)
+bool z_showSignals = input.bool(true,title = "Show Reversal Signals", group=vwap_z_group)
+color z_color_above_zero = input.color(color.new(#7FFF00, 0),title="Line Color Above Zero", group=vwap_z_group)
+color z_color_below_zero = input.color(color.new(#FF00FF, 0),title="Line Color Below Zero", group=vwap_z_group)
+
+calc_zvwap_enhanced(periods) =>
+    vw_mean = ta.vwma(close, periods)
+    vw_sd = math.sqrt(ta.sma(math.pow(close - vw_mean, 2), periods))
+    vwapz = vw_sd != 0 ? (close - vw_mean) / vw_sd : 0
+    vwapz
+
+zvwap_val = calc_zvwap_enhanced(zscore_len)
+
+z_ub_high = plot(show_vwap_z ? z_upper_top : na, title="Overbought High", color=color.new(color.red, 0))
+z_ub_low = plot(show_vwap_z ? z_upper_bottom : na, title="Overbought Low", color=color.new(color.red, 0))
+fill(z_ub_high, z_ub_low, color=color.new(color.red, 90))
+
+z_os_high = plot(show_vwap_z ? z_lower_top : na, title="Oversold High", color=color.new(color.green, 0))
+z_os_low = plot(show_vwap_z ? z_lower_bottom : na, title="Oversold Low", color=color.new(color.green, 0))
+fill(z_os_high, z_os_low, color=color.new(color.green, 90))
+
+plot(show_vwap_z ? zvwap_val : na, title="ZVWAP", color=zvwap_val >= 0 ? z_color_above_zero : z_color_below_zero, linewidth=2)
+
+alert_condition_up = zvwap_val > z_upper_bottom
+alert_condition_down = zvwap_val < z_lower_bottom
+
+plotshape(show_vwap_z and alert_condition_down and z_showSignals? zvwap_val - 0.2 : na, title="Support Signal", location=location.absolute, style=shape.labelup, color=color.green, text="Buy", textcolor=color.white)
+plotshape(show_vwap_z and alert_condition_up and z_showSignals ? zvwap_val + 0.2: na, title="Resistance Signal", location=location.absolute, style=shape.labeldown, color=color.red, text="Sell", textcolor=color.white)
+
+alertcondition(condition = alert_condition_down,title="VWAP Z-Score Buy", message="ZVWAP potential buy signal")
+alertcondition(condition = alert_condition_up, title="VWAP Z-Score Sell", message="ZVWAP potential sell signal")
