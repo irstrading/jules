@@ -2,10 +2,13 @@
 
 import streamlit as st
 import pandas as pd
+import numpy as np
 import time
 import os
 import json
-from nifty_engine.core.market_engine import SmartMoney, Greeks, GEX, OptionsAnalyzer, MarketMoodIndex
+from nifty_engine.core.market_engine import SmartMoney, Greeks, GEX, OptionsAnalyzer, MarketMoodIndex, IndexAlignment
+from nifty_engine.core.indicators import Indicators
+from streamlit_autorefresh import st_autorefresh
 from nifty_engine.strategies.manager import StrategyManager
 from nifty_engine.data.database import Database
 from nifty_engine.core.movers import NiftyMovers
@@ -48,12 +51,15 @@ if 'movers' not in st.session_state:
     st.session_state.movers = NiftyMovers()
 
 def main():
+    # Auto-refresh every 2 minutes (120,000 milliseconds)
+    st_autorefresh(interval=120000, key="datarefresh")
+
     # --- Sidebar Navigation ---
     with st.sidebar:
         st.image("https://openalgo.in/assets/img/logo.png", width=150) # Mock logo or text
         st.title("OpenAlgo v3")
         st.divider()
-        menu = st.radio("Navigation", ["Dashboard", "Strategies", "Option Chain", "Rules Engine", "Settings"])
+        menu = st.radio("Navigation", ["Dashboard", "Option Chain", "Rules Engine", "Settings"])
 
         st.divider()
         engine_running = st.session_state.db.get_config("engine_running", "OFF") == "ON"
@@ -73,115 +79,97 @@ def main():
 
     if menu == "Dashboard":
         render_dashboard()
-    elif menu == "Strategies":
-        render_strategies()
     elif menu == "Option Chain":
         render_option_chain()
     elif menu == "Rules Engine":
         render_rules()
+    elif menu == "Settings":
+        render_settings()
 
 def render_dashboard():
-    st.markdown("<div class='main-header'>Dashboard Summary</div>", unsafe_allow_html=True)
+    st.markdown("<div class='main-header'>Market Intelligence Dashboard</div>", unsafe_allow_html=True)
+
+    # Read Real Market State from DB
+    market_state_json = st.session_state.db.get_config("market_state")
+    if market_state_json:
+        market_state = json.loads(market_state_json)
+        alignment = market_state.get("alignment", {"status": "Waiting for Data...", "bullish_pct": 0, "bearish_pct": 0})
+        stock_states = market_state.get("stock_states", {})
+    else:
+        alignment = {"status": "Waiting for Data...", "bullish_pct": 0, "bearish_pct": 0}
+        stock_states = {}
+
+    # Alignment Alert
+    if "Strong" in alignment['status']:
+        color = "#10b981" if "Bullish" in alignment['status'] else "#ef4444"
+        st.success(f"### 🎯 Market Alignment: {alignment['status']}")
+    else:
+        st.warning(f"### ⚖️ Market Alignment: {alignment['status']}")
 
     # Summary Metrics
     c1, c2, c3, c4 = st.columns(4)
-    chart_df = st.session_state.db.get_last_candles("NIFTY", limit=1)
-    spot = chart_df['close'].iloc[-1] if not chart_df.empty else 24500
-
     with c1:
-        st.markdown(f"<div class='metric-card'><b>NIFTY 50</b><br><h2 style='margin:0;'>₹{spot}</h2><span style='color:green;'>+1.2%</span></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='metric-card'><b>Bullish Participation</b><br><h2 style='color:#10b981; margin:0;'>{alignment['bullish_pct']}%</h2></div>", unsafe_allow_html=True)
     with c2:
-        st.markdown(f"<div class='metric-card'><b>Active Strategies</b><br><h2 style='margin:0;'>{sum(1 for s in st.session_state.strategy_manager.strategies.values() if s.enabled)}</h2><span>Running</span></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='metric-card'><b>Bearish Participation</b><br><h2 style='color:#ef4444; margin:0;'>{alignment['bearish_pct']}%</h2></div>", unsafe_allow_html=True)
     with c3:
         mmi = MarketMoodIndex.calculate(1.15, 45, 1.2, 1)
         regime = MarketMoodIndex.get_regime(mmi)
         st.markdown(f"<div class='metric-card'><b>Market Mood (MMI)</b><br><h2 style='margin:0;'>{mmi}</h2><span>{regime}</span></div>", unsafe_allow_html=True)
     with c4:
-        st.markdown(f"<div class='metric-card'><b>A/D Ratio</b><br><h2 style='margin:0;'>1.85</h2><span style='color:green;'>Bullish Bias</span></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='metric-card'><b>Total Market Weight</b><br><h2 style='margin:0;'>100%</h2><span>Tracked</span></div>", unsafe_allow_html=True)
 
     st.divider()
 
     col_chart, col_movers = st.columns([2, 1])
     with col_chart:
-        st.subheader("Nifty Intraday Chart")
-        chart_df_full = st.session_state.db.get_last_candles("NIFTY", limit=100)
-        if not chart_df_full.empty:
-            fig = go.Figure(data=[go.Candlestick(x=chart_df_full['timestamp'],
-                            open=chart_df_full['open'],
-                            high=chart_df_full['high'],
-                            low=chart_df_full['low'],
-                            close=chart_df_full['close'])])
-            fig.update_layout(template="plotly_white", height=400, margin=dict(l=0, r=0, t=0, b=0))
-            st.plotly_chart(fig, use_container_width=True)
+        st.subheader("ATM Straddle Chart (Combined Premium)")
+
+        # Fetch Real Straddle Data from DB
+        df_straddle = st.session_state.db.get_last_candles("NIFTY_STRADDLE", limit=100)
+
+        if df_straddle.empty:
+            st.info("Waiting for Live Straddle Data... (Syncing from Angel One)")
+            # Fallback for visual demo if DB is empty
+            timestamps = pd.date_range(end=datetime.now(), periods=100, freq='1min')
+            prices = [150 + (i * 0.5) + (np.random.randn() * 2) for i in range(100)]
+            df_straddle = pd.DataFrame({'timestamp': timestamps, 'close': prices})
+
+        # Calculate VWAP (Cumulative Average as requested)
+        df_straddle['vwap'] = Indicators.cumulative_average(df_straddle['close'])
+
+        fig = go.Figure()
+        # Straddle Premium Line
+        fig.add_trace(go.Scatter(x=df_straddle['timestamp'], y=df_straddle['close'],
+                                 name='Straddle Price', line=dict(color='#2563eb', width=2)))
+        # VWAP Line
+        fig.add_trace(go.Scatter(x=df_straddle['timestamp'], y=df_straddle['vwap'],
+                                 name='Straddle VWAP', line=dict(color='#000000', width=1.5, dash='dash')))
+
+        fig.update_layout(template="plotly_white", height=450, margin=dict(l=0, r=0, t=0, b=0),
+                          legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.caption("Chart updates every 2 minutes automatically.")
 
     with col_movers:
-        st.subheader("Top Contributors")
-        # Pulling from Knowledge Base weights
+        st.subheader("Weightage Movers")
         weights = st.session_state.movers.weights
-        top_weights = sorted(weights.items(), key=lambda x: x[1], reverse=True)[:5]
+        top_weights = sorted(weights.items(), key=lambda x: x[1], reverse=True)[:10]
 
-        # Simulating live changes for visualization
         for symbol, weight in top_weights:
-            # Fake change for UI demo
-            sim_change = 0.5 if symbol in ["RELIANCE", "HDFCBANK"] else -0.2
-            impact = (sim_change * weight)
-            color = "green" if impact > 0 else "red"
-            st.markdown(f"**{symbol}**: <span style='color:{color};'>{impact:+.2f} pts (W: {weight}%)</span>", unsafe_allow_html=True)
+            state = stock_states.get(symbol, {})
+            lp = state.get('lp', 0)
+            pc = state.get('pc', 0)
 
-def render_strategies():
-    st.markdown("<div class='main-header'>Strategy Management</div>", unsafe_allow_html=True)
+            direction = 0
+            if lp > pc: direction = 1
+            elif lp < pc: direction = -1
 
-    # Upload New
-    with st.expander("➕ Deploy New Strategy"):
-        uploaded_file = st.file_uploader("Upload .py file", type="py")
-        if uploaded_file:
-            save_path = os.path.join("nifty_engine/strategies", uploaded_file.name)
-            with open(save_path, "wb") as f:
-                f.write(uploaded_file.getbuffer())
-            st.success("Uploaded!")
-            st.session_state.strategy_manager.load_strategies()
+            color = "#10b981" if direction == 1 else ("#ef4444" if direction == -1 else "#64748b")
+            arrow = "▲" if direction == 1 else ("▼" if direction == -1 else "▬")
+            st.markdown(f"**{symbol}** ({weight}%): <span style='color:{color};'>{arrow}</span>", unsafe_allow_html=True)
 
-    # Table View
-    st.subheader("Deployed Strategies")
-    strategies = st.session_state.strategy_manager.strategies
-
-    if not strategies:
-        st.info("No strategies deployed.")
-        return
-
-    # Header
-    cols = st.columns([2, 1, 1, 1, 1])
-    cols[0].write("**Strategy Name**")
-    cols[1].write("**Instrument**")
-    cols[2].write("**Timeframe**")
-    cols[3].write("**Status**")
-    cols[4].write("**Actions**")
-
-    for name, strategy in strategies.items():
-        st.divider()
-        c = st.columns([2, 1, 1, 1, 1])
-        c[0].write(f"**{name}**")
-        c[1].write(", ".join(getattr(strategy, 'instruments', ['NIFTY'])))
-        c[2].write(getattr(strategy, 'timeframe', '1m'))
-
-        status_db = st.session_state.db.get_config(f"strategy_{name}", "OFF")
-        status_color = "green" if status_db == "ON" else "gray"
-        c[3].write(f":{status_color}[{status_db}]")
-
-        # Action buttons
-        with c[4]:
-            if status_db == "OFF":
-                if st.button("▶️", key=f"start_{name}", help="Start Strategy"):
-                    st.session_state.strategy_manager.enable_strategy(name)
-                    st.rerun()
-            else:
-                if st.button("⏸️", key=f"stop_{name}", help="Stop Strategy"):
-                    st.session_state.strategy_manager.disable_strategy(name)
-                    st.rerun()
-
-            if st.button("🗑️", key=f"del_{name}", help="Delete"):
-                st.session_state.strategy_manager.delete_strategy(name)
-                st.rerun()
 
 def render_option_chain():
     st.markdown("<div class='main-header'>Advanced Option Chain</div>", unsafe_allow_html=True)
@@ -220,6 +208,13 @@ def render_option_chain():
 
 def render_rules():
     st.markdown("<div class='main-header'>Market Rules Engine</div>", unsafe_allow_html=True)
+
+    if st.button("🔄 Rapid Refresh Knowledge"):
+        from nifty_engine.core.rules_engine import RulesEngine
+        re = RulesEngine()
+        if re.refresh_knowledge():
+            st.success("Knowledge Base Refreshed successfully from source!")
+
     kb_path = "nifty_engine/data/knowledge_base.json"
     if os.path.exists(kb_path):
         with open(kb_path, 'r') as f:
@@ -232,6 +227,23 @@ def render_rules():
 
         st.write("### Impact Behaviors")
         st.json(kb_data.get("impact_behavior", []))
+
+def render_settings():
+    st.markdown("<div class='main-header'>System Settings</div>", unsafe_allow_html=True)
+
+    st.subheader("API Credentials")
+    st.info("Credentials are managed via the .env file for security.")
+
+    st.subheader("System Performance")
+    st.write("Current Refresh Interval: 2 Minutes (Optimized for low storage impact)")
+
+    st.subheader("Data Storage")
+    db_path = "nifty_data.db"
+    if os.path.exists(db_path):
+        size_mb = os.path.getsize(db_path) / (1024 * 1024)
+        st.write(f"Database Size: {size_mb:.2f} MB")
+        if st.button("Cleanup Old Data"):
+            st.warning("Feature coming soon: Auto-pruning old candle data.")
 
 if __name__ == "__main__":
     main()

@@ -18,9 +18,20 @@ class RulesEngine:
                 # Extract rules part
                 self.rules = data.get("market_rules", {})
                 self.impact_behavior = data.get("impact_behavior", [])
+                self.last_loaded = datetime.now()
         else:
             self.rules = {}
             self.impact_behavior = []
+            self.last_loaded = None
+
+    def refresh_knowledge(self):
+        """
+        Rapidly refreshes knowledge from the local file and potentially
+        small external snippets without bloating storage.
+        """
+        self.load_rules()
+        logger.info("Knowledge Base Refreshed.")
+        return True
 
     def get_dynamic_context(self):
         """

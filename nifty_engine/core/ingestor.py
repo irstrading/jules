@@ -37,10 +37,31 @@ class AngelOneIngestor:
                 return True
             else:
                 logger.error(f"Login Failed: {data['message']}")
+                # If error is about session already existing, we might need a different approach
+                # but usually generateSession works fine.
                 return False
         except Exception as e:
             logger.error(f"Error during login: {e}")
             return False
+
+    def refresh_session(self):
+        """Attempts to refresh the JWT token using the refresh token."""
+        try:
+            if not self.refresh_token:
+                return self.login()
+
+            data = self.smart_api.renewAccessToken(self.refresh_token)
+            if data['status']:
+                self.jwt_token = data['data']['jwtToken']
+                self.refresh_token = data['data']['refreshToken']
+                logger.info("Session Refreshed Successfully")
+                return True
+            else:
+                logger.warning(f"Session Refresh Failed: {data['message']}. Attempting full login...")
+                return self.login()
+        except Exception as e:
+            logger.error(f"Error during session refresh: {e}")
+            return self.login()
 
     def connect_websocket(self, correlation_id, action, mode, token_list):
         """
@@ -99,3 +120,19 @@ class AngelOneIngestor:
 
     def set_on_tick_callback(self, callback):
         self.on_tick_callback = callback
+
+    def get_atm_strike(self, spot_price, base=50):
+        """Calculates ATM strike based on spot price."""
+        return round(spot_price / base) * base
+
+    def get_option_symbols(self, underlying, expiry_date, strike_price):
+        """
+        In production, this would use a master contract file or API
+        to find the specific CE/PE tokens for a given strike.
+        For now, we'll implement a placeholder that simulates token discovery.
+        """
+        # Mocking token discovery for the sake of logic flow
+        # In real life, you'd search the Angel One Scrip Master
+        ce_token = f"OPT_{underlying}_{strike_price}_CE"
+        pe_token = f"OPT_{underlying}_{strike_price}_PE"
+        return ce_token, pe_token

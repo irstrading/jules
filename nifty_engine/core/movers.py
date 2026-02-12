@@ -14,8 +14,15 @@ class NiftyMovers:
         if os.path.exists(self.kb_path):
             with open(self.kb_path, 'r') as f:
                 data = json.load(f)
-                self.weights = data.get("nifty_50_weights", {})
+                self.weights_data = data.get("nifty_50_weights", {})
+                self.weights = {k: v['weight'] for k, v in self.weights_data.items()}
+                self.token_to_symbol = {v['token']: k for k, v in self.weights_data.items()}
                 self.sectors = data.get("sectors", {})
+
+    def get_token_list(self, exchange_type=1):
+        """Returns token list for WebSocket subscription"""
+        tokens = [v['token'] for v in self.weights_data.values()]
+        return [{"exchangeType": exchange_type, "tokens": tokens}]
 
     def calculate_contribution(self, stock_symbol, price_change_pct):
         """

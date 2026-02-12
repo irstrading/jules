@@ -167,6 +167,46 @@ class MarketMoodIndex:
         if declines == 0: return advances
         return round(advances / declines, 2)
 
+# ==========================================
+# PART 6: INDEX SENTIMENT ALIGNMENT (70% Rule)
+# ==========================================
+class IndexAlignment:
+    """
+    Calculates if the market is trending based on weighted stock/sector participation.
+    """
+    @staticmethod
+    def calculate(stock_directions, weights):
+        """
+        stock_directions: dict {symbol: 1 for green, -1 for red, 0 for flat}
+        weights: dict {symbol: weight_percentage}
+        """
+        bullish_weight = 0
+        bearish_weight = 0
+        total_tracked_weight = 0
+
+        for symbol, direction in stock_directions.items():
+            weight = weights.get(symbol, 0)
+            total_tracked_weight += weight
+            if direction == 1:
+                bullish_weight += weight
+            elif direction == -1:
+                bearish_weight += weight
+
+        bull_pct = (bullish_weight / total_tracked_weight) * 100 if total_tracked_weight > 0 else 0
+        bear_pct = (bearish_weight / total_tracked_weight) * 100 if total_tracked_weight > 0 else 0
+
+        status = "Neutral"
+        if bull_pct >= 70:
+            status = "Strong Bullish Trend (70%+ Aligned)"
+        elif bear_pct >= 70:
+            status = "Strong Bearish Trend (70%+ Aligned)"
+
+        return {
+            "bullish_pct": round(bull_pct, 1),
+            "bearish_pct": round(bear_pct, 1),
+            "status": status
+        }
+
 if __name__ == "__main__":
     # Test Greeks
     greeks = Greeks.calculate('c', 24500, 24600, 0.02, 0.10, 0.15)

@@ -7,3 +7,4 @@ python-telegram-bot
 pyotp
 python-dotenv
 plotly
+streamlit-autorefresh

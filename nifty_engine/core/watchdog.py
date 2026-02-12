@@ -29,19 +29,34 @@ class ConnectionWatchdog:
         self.is_connected = True
 
 class AutoReconnect:
-    def __init__(self, ingestor, max_retries=5):
+    def __init__(self, ingestor, max_retries=10):
         self.ingestor = ingestor
         self.max_retries = max_retries
         self.retry_count = 0
+        self.backoff_factor = 2 # Exponential backoff factor
 
     def attempt_reconnect(self):
-        logger.warning(f"Attempting Reconnection... (Attempt {self.retry_count + 1}/{self.max_retries})")
-        if self.ingestor.login():
-            logger.info("Re-login successful. Restarting WebSocket...")
-            # Note: Re-subscription logic should be handled by the caller or Ingestor
-            self.retry_count = 0
-            return True
-        else:
+        """
+        Attempts to reconnect with exponential backoff.
+        """
+        if self.retry_count >= self.max_retries:
+            logger.error("Max reconnection retries reached.")
+            return False
+
+        wait_time = min(60, self.backoff_factor ** self.retry_count)
+        logger.warning(f"Attempting Reconnection... (Attempt {self.retry_count + 1}/{self.max_retries}) in {wait_time}s")
+        time.sleep(wait_time)
+
+        try:
+            if self.ingestor.login():
+                logger.info("Re-login successful. WebSocket will be restarted by the caller.")
+                self.retry_count = 0
+                return True
+            else:
+                self.retry_count += 1
+                return False
+        except Exception as e:
+            logger.error(f"Unexpected error during reconnection: {e}")
             self.retry_count += 1
             return False
 

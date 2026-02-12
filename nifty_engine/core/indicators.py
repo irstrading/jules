@@ -22,6 +22,11 @@ class Indicators:
         return (p * q).cumsum() / q.cumsum()
 
     @staticmethod
+    def cumulative_average(data):
+        """Simple Cumulative Average (Price-based VWAP when volume is missing)"""
+        return data.expanding().mean()
+
+    @staticmethod
     def rsi(data, period=14):
         """Relative Strength Index"""
         delta = data.diff()
