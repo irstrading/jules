@@ -1,44 +1,19 @@
 # 🚀 Nifty Advanced Algo Engine
 
-A modular, professional-grade trading system for the Indian stock market.
+## 🛠️ Setup & Security
+1.  **Environment Variables**: All sensitive data (API keys, passwords) must be stored in the root `.env` file. Never hardcode them in `config.py`.
+2.  **Launcher**: Use `python launcher.py` from the root directory to manage the system.
 
-## 🏗️ Architecture
-- **Core**: Market Engine (Greeks, GEX, OI Sentiment) and Indicators library.
-- **Data**: SQLite persistence for 1-minute candles.
-- **Ingestor**: Angel One SmartAPI WebSocket integration.
-- **Strategies**: Dynamic strategy loading and management.
-- **UI**: Streamlit-based live dashboard.
-- **Communicator**: Telegram bot for alerts and remote control.
+## 📁 Modular Components
+- `core/`: High-performance calculations.
+- `data/`: SQLite persistence layer.
+- `strategies/`: Dynamic loading zone. Add your `.py` files here.
+- `ui/`: Streamlit dashboard.
+- `communicator/`: Telegram bot for remote management.
 
-## 🛠️ Setup
-1. Install dependencies:
-   ```bash
-   pip install -r nifty_engine/requirements.txt
-   ```
-2. Configure your credentials in `nifty_engine/config.py` or set environment variables.
+## 🛡️ Safety Mechanisms
+- **Emergency Stop**: The "RED BUTTON" in the dashboard and `/stop` command in Telegram will instantly disable all strategies.
+- **Validation**: `config.py` validates that all required credentials are present before allowing the system to start.
 
-## 🚀 Running the System
-1. **Start the Dashboard**:
-   ```bash
-   streamlit run nifty_engine/ui/app.py
-   ```
-2. **Start the Engine**:
-   ```bash
-   python nifty_engine/run_engine.py
-   ```
-
-## 📝 Strategy Development
-Place your strategy `.py` files in `nifty_engine/strategies/`. Your strategy must inherit from `BaseStrategy`.
-
-```python
-from .base import BaseStrategy
-from ..core.indicators import Indicators
-
-class MyStrategy(BaseStrategy):
-    def __init__(self):
-        super().__init__(name="My Strategy", symbol="NIFTY")
-
-    def on_candle(self, df):
-        # Your logic here
-        pass
-```
+---
+*Production Ready | Modular | Secure*

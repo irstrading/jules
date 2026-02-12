@@ -41,6 +41,13 @@ class Database:
                     strategy_name TEXT
                 )
             ''')
+            # Table for shared system state
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS system_config (
+                    key TEXT PRIMARY KEY,
+                    value TEXT
+                )
+            ''')
             conn.commit()
 
     def save_candles(self, df, symbol, interval='1m'):
@@ -93,3 +100,16 @@ class Database:
         query = f"SELECT * FROM alerts ORDER BY timestamp DESC LIMIT {limit}"
         with self._get_connection() as conn:
             return pd.read_sql_query(query, conn)
+
+    def set_config(self, key, value):
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("INSERT OR REPLACE INTO system_config (key, value) VALUES (?, ?)", (key, str(value)))
+            conn.commit()
+
+    def get_config(self, key, default=None):
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT value FROM system_config WHERE key = ?", (key,))
+            result = cursor.fetchone()
+            return result[0] if result else default

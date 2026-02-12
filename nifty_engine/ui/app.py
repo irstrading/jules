@@ -12,36 +12,35 @@ import plotly.graph_objects as go
 st.set_page_config(page_title="Nifty Engine Dashboard", layout="wide")
 
 # Initialize Session State
-if 'strategy_manager' not in st.session_state:
-    st.session_state.strategy_manager = StrategyManager()
-    st.session_state.strategy_manager.load_strategies()
-if 'running' not in st.session_state:
-    st.session_state.running = False
 if 'db' not in st.session_state:
     st.session_state.db = Database()
+if 'strategy_manager' not in st.session_state:
+    st.session_state.strategy_manager = StrategyManager(st.session_state.db)
+    st.session_state.strategy_manager.load_strategies()
 
 def main():
     st.title("🚀 Nifty Advanced Algo Dashboard")
 
+    # Sync status from DB
+    st.session_state.strategy_manager.sync_with_db()
+    kill_switch_active = st.session_state.db.get_config("kill_switch", "OFF") == "ON"
+    engine_running = st.session_state.db.get_config("engine_running", "OFF") == "ON"
+
     # Sidebar: Control Panel
     st.sidebar.header("🕹️ Control Panel")
 
-    if st.sidebar.button("🔴 EMERGENCY STOP", use_container_width=True):
-        st.session_state.strategy_manager.stop_all()
-        st.session_state.running = False
-        st.error("ALL STRATEGIES STOPPED!")
-
-    status_color = "green" if st.session_state.running else "red"
-    st.sidebar.markdown(f"**Status:** :{status_color}[{'RUNNING' if st.session_state.running else 'STOPPED'}]")
-
-    if not st.session_state.running:
-        if st.sidebar.button("▶️ START ENGINE"):
-            st.session_state.running = True
+    if kill_switch_active:
+        st.sidebar.error("🚨 EMERGENCY STOP ACTIVE")
+        if st.sidebar.button("🔓 RESET KILL SWITCH", use_container_width=True):
+            st.session_state.db.set_config("kill_switch", "OFF")
             st.rerun()
     else:
-        if st.sidebar.button("⏸️ PAUSE ENGINE"):
-            st.session_state.running = False
+        if st.sidebar.button("🔴 EMERGENCY STOP", use_container_width=True):
+            st.session_state.strategy_manager.stop_all()
             st.rerun()
+
+    status_color = "green" if engine_running else "red"
+    st.sidebar.markdown(f"**Engine Status:** :{status_color}[{'RUNNING' if engine_running else 'STOPPED'}]")
 
     # --- Strategy Management ---
     st.sidebar.divider()
@@ -49,35 +48,51 @@ def main():
 
     uploaded_file = st.sidebar.file_uploader("Upload New Strategy (.py)", type="py")
     if uploaded_file is not None:
-        with open(os.path.join("nifty_engine/strategies", uploaded_file.name), "wb") as f:
+        save_path = os.path.join("nifty_engine/strategies", uploaded_file.name)
+        with open(save_path, "wb") as f:
             f.write(uploaded_file.getbuffer())
         st.sidebar.success(f"Uploaded {uploaded_file.name}")
         st.session_state.strategy_manager.load_strategies()
+        st.rerun()
 
     st.sidebar.write("### Active Strategies")
     for name, strategy in st.session_state.strategy_manager.strategies.items():
         col1, col2 = st.sidebar.columns([3, 1])
         col1.write(name)
-        if strategy.enabled:
+
+        # Read status from DB for this strategy
+        current_status = st.session_state.db.get_config(f"strategy_{name}", "OFF")
+
+        if current_status == "ON":
             if col2.button("OFF", key=f"off_{name}"):
                 st.session_state.strategy_manager.disable_strategy(name)
                 st.rerun()
         else:
-            if col2.button("ON", key=f"on_{name}"):
+            if col2.button("ON", key=f"on_{name}", disabled=kill_switch_active):
                 st.session_state.strategy_manager.enable_strategy(name)
                 st.rerun()
 
     # --- Main Dashboard Metrics ---
     m1, m2, m3, m4 = st.columns(4)
 
-    # Placeholder data for demonstration
-    spot_price = 24500
-    pcr = SmartMoney.calculate_pcr(1000000, 1200000)
-    sentiment = SmartMoney.analyze_sentiment(50, -15000)
-    gex_val = GEX.calculate_strike_gex(5000, 4000, 0.0005, 0.0004, spot_price)
+    # Fetch real data if available
+    chart_df = st.session_state.db.get_last_candles("NIFTY", limit=100)
 
-    m1.metric("Nifty Spot", f"₹{spot_price}", "+0.25%")
-    m2.metric("Put-Call Ratio (PCR)", pcr, "Bullish" if pcr > 1 else "Bearish")
+    if not chart_df.empty:
+        spot_price = chart_df['close'].iloc[-1]
+        price_change = spot_price - chart_df['close'].iloc[0]
+        # Example OI and Greeks (In production, fetch from DB/API)
+        pcr = SmartMoney.calculate_pcr(1000000, 1200000)
+        sentiment = SmartMoney.analyze_sentiment(price_change, -15000)
+        gex_val = GEX.calculate_strike_gex(5000, 4000, 0.0005, 0.0004, spot_price)
+    else:
+        spot_price = 0
+        pcr = 0
+        sentiment = "N/A"
+        gex_val = 0
+
+    m1.metric("Nifty Spot", f"₹{spot_price}")
+    m2.metric("Put-Call Ratio (PCR)", pcr)
     m3.metric("Market Sentiment", sentiment)
     m4.metric("Net Gamma Exposure", f"{gex_val:.2f} Cr")
 
@@ -87,27 +102,16 @@ def main():
 
     with col_chart:
         st.subheader("📊 Price & OI Analysis")
-        # Simulate some data for the chart
-        chart_df = st.session_state.db.get_last_candles("NIFTY", limit=50)
-        if chart_df.empty:
-            # Create dummy data for visualization if DB is empty
-            dates = pd.date_range(end=pd.Timestamp.now(), periods=50, freq='min')
-            chart_df = pd.DataFrame({
-                'timestamp': dates,
-                'open': [24500 + i for i in range(50)],
-                'high': [24505 + i for i in range(50)],
-                'low': [24495 + i for i in range(50)],
-                'close': [24502 + i for i in range(50)],
-                'volume': [1000 for _ in range(50)]
-            })
-
-        fig = go.Figure(data=[go.Candlestick(x=chart_df['timestamp'],
-                        open=chart_df['open'],
-                        high=chart_df['high'],
-                        low=chart_df['low'],
-                        close=chart_df['close'])])
-        fig.update_layout(title="Nifty 1-Minute Chart", xaxis_rangeslider_visible=False, height=500)
-        st.plotly_chart(fig, use_container_width=True)
+        if not chart_df.empty:
+            fig = go.Figure(data=[go.Candlestick(x=chart_df['timestamp'],
+                            open=chart_df['open'],
+                            high=chart_df['high'],
+                            low=chart_df['low'],
+                            close=chart_df['close'])])
+            fig.update_layout(xaxis_rangeslider_visible=False, height=500)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No market data in database. Engine might be offline or warming up.")
 
     with col_alerts:
         st.subheader("🔔 Recent Signals")
@@ -118,13 +122,9 @@ def main():
         else:
             st.write("No signals yet.")
 
-    # --- Background Loop simulation if running ---
-    if st.session_state.running:
-        # In a real app, this would be handled by a separate process/thread
-        # but for Streamlit we can do a simple loop or use a background runner
-        st.empty()
-        # time.sleep(1)
-        # st.rerun()
+    # Auto-refresh
+    time.sleep(5)
+    st.rerun()
 
 if __name__ == "__main__":
     main()

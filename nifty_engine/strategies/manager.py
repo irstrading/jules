@@ -9,7 +9,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 class StrategyManager:
-    def __init__(self, strategies_dir="nifty_engine/strategies"):
+    def __init__(self, db, strategies_dir="nifty_engine/strategies"):
+        self.db = db
         self.strategies_dir = strategies_dir
         self.strategies = {} # {name: instance}
 
@@ -41,10 +42,12 @@ class StrategyManager:
     def enable_strategy(self, name):
         if name in self.strategies:
             self.strategies[name].enable()
+            self.db.set_config(f"strategy_{name}", "ON")
 
     def disable_strategy(self, name):
         if name in self.strategies:
             self.strategies[name].disable()
+            self.db.set_config(f"strategy_{name}", "OFF")
 
     def run_on_candle(self, symbol, df):
         signals = []
@@ -58,4 +61,19 @@ class StrategyManager:
     def stop_all(self):
         for strategy in self.strategies.values():
             strategy.disable()
-        logger.info("All strategies stopped.")
+            self.db.set_config(f"strategy_{strategy.name}", "OFF")
+        self.db.set_config("kill_switch", "ON")
+        logger.info("All strategies stopped and Kill Switch activated.")
+
+    def sync_with_db(self):
+        """Syncs the enabled status of strategies with the database"""
+        kill_switch = self.db.get_config("kill_switch", "OFF")
+        for name, strategy in self.strategies.items():
+            if kill_switch == "ON":
+                strategy.disable()
+            else:
+                status = self.db.get_config(f"strategy_{name}", "OFF")
+                if status == "ON" and not strategy.enabled:
+                    strategy.enable()
+                elif status == "OFF" and strategy.enabled:
+                    strategy.disable()
