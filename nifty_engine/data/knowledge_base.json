@@ -41,10 +41,22 @@
         "SectorRotation": "If IT is weak, look at Banking or Pharma for stability.",
         "ExpiryDay": "High Gamma volatility usually occurs after 1:30 PM.",
         "NiftyMovers": "Reliance and HDFC Bank combined can move Nifty 50+ points alone.",
-        "GlobalImpact": "US Nasdaq highly impacts NIFTY IT sector sentiment."
+        "GlobalImpact": "US Nasdaq highly impacts NIFTY IT sector sentiment.",
+        "PreMarketImpact": "GIFT Nifty movements often dictate the opening gap for Nifty 50.",
+        "MidCapBehavior": "Midcaps usually follow Nifty trend but with higher beta/volatility.",
+        "VIXRelation": "India VIX > 20 indicates high fear and potential for sharp pullbacks.",
+        "FII_DII_Activity": "FII buying usually leads to heavy-weight stock rallies."
     },
     "impact_behavior": [
         {"event": "Budget Day", "behavior": "High IV, wide swings, usually ranges 2-4%."},
-        {"event": "RBI Policy", "behavior": "Direct impact on Bank Nifty and Banking stocks."}
-    ]
+        {"event": "RBI Policy", "behavior": "Direct impact on Bank Nifty and Banking stocks."},
+        {"event": "EarningsSeason", "behavior": "Individual stock volatility increases 2-3 days before results."},
+        {"event": "FedMeeting", "behavior": "Impacts USDINR and IT stocks globally."}
+    ],
+    "stock_behaviors": {
+        "RELIANCE": "Often used to hold Nifty when other sectors are falling.",
+        "HDFCBANK": "Key driver for Bank Nifty; 1% move here is significant.",
+        "INFY": "Sensitive to US economic data and Nasdaq performance.",
+        "ITC": "Considered a defensive stock; often rises when market is uncertain."
+    }
 }

@@ -5,12 +5,16 @@ from nifty_engine.core.indicators import Indicators
 import pandas as pd
 
 class EMACrossoverStrategy(BaseStrategy):
+    name = "EMA Crossover"
+    instruments = ["NIFTY"]
+    timeframe = "1m"
+
     def __init__(self):
-        super().__init__(name="EMA Crossover", symbol="NIFTY")
+        super().__init__()
         self.fast_period = 9
         self.slow_period = 21
 
-    def on_candle(self, df):
+    def on_candle(self, df, context):
         if len(df) < self.slow_period + 1:
             return None
 

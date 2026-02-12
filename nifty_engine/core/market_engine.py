@@ -129,6 +129,44 @@ class OptionsAnalyzer:
             return 0
         return round(oi_history[-1]['pcr'] - oi_history[0]['pcr'], 4)
 
+# ==========================================
+# PART 5: MARKET MOOD INDEX (MMI)
+# ==========================================
+class MarketMoodIndex:
+    """
+    Composite sentiment index (0-100).
+    """
+    @staticmethod
+    def calculate(pcr, iv_percentile, ad_ratio, oi_sentiment):
+        """
+        pcr: Put-Call Ratio (Expected 0.5 to 1.5)
+        iv_percentile: 0 to 100
+        ad_ratio: Advance/Decline Ratio (Expected 0.1 to 10)
+        oi_sentiment: 1 for Bullish, -1 for Bearish, 0 for Neutral
+        """
+        # Normalize PCR (0.7 to 1.3 -> 0 to 100)
+        pcr_score = np.clip((pcr - 0.7) / (1.3 - 0.7) * 100, 0, 100)
+
+        # Normalize AD Ratio (0.5 to 2.0 -> 0 to 100)
+        ad_score = np.clip((ad_ratio - 0.5) / (2.0 - 0.5) * 100, 0, 100)
+
+        # Weighted average
+        mmi = (pcr_score * 0.3) + (iv_percentile * 0.2) + (ad_score * 0.3) + ((oi_sentiment + 1) * 50 * 0.2)
+
+        return round(mmi, 2)
+
+    @staticmethod
+    def get_regime(mmi):
+        if mmi < 30: return "Extreme Fear (Bearish)"
+        if mmi < 50: return "Fear (Cautious)"
+        if mmi < 70: return "Greed (Bullish)"
+        return "Extreme Greed (Overbought)"
+
+    @staticmethod
+    def calculate_ad_ratio(advances, declines):
+        if declines == 0: return advances
+        return round(advances / declines, 2)
+
 if __name__ == "__main__":
     # Test Greeks
     greeks = Greeks.calculate('c', 24500, 24600, 0.02, 0.10, 0.15)

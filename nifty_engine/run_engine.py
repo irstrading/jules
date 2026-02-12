@@ -9,6 +9,7 @@ from nifty_engine.communicator.telegram_bot import TelegramBot
 from nifty_engine.config import NIFTY_SYMBOL
 from nifty_engine.core.watchdog import ConnectionWatchdog, AutoReconnect
 from nifty_engine.core.movers import NiftyMovers
+from nifty_engine.core.rules_engine import RulesEngine
 import pandas as pd
 from datetime import datetime, timedelta
 
@@ -24,6 +25,7 @@ class NiftyEngine:
         self.watchdog = ConnectionWatchdog(timeout_seconds=30)
         self.reconnector = AutoReconnect(self.ingestor)
         self.movers = NiftyMovers()
+        self.rules_engine = RulesEngine()
         self.running = False
         self.tick_data = [] # Buffer for ticks to aggregate into candles
 
@@ -109,11 +111,18 @@ class NiftyEngine:
         # Sync strategy status from DB before running
         self.strategy_manager.sync_with_db()
 
+        # Prepare Context for Strategies
+        context = {
+            "dynamic_rules": self.rules_engine.get_dynamic_context(),
+            "movers": self.movers.weights, # Static weights for now
+            "timestamp": datetime.now()
+        }
+
         # Fetch last candles for technical analysis
         history_df = self.db.get_last_candles(symbol, limit=100)
 
         # Run strategies
-        signals = self.strategy_manager.run_on_candle(symbol, history_df)
+        signals = self.strategy_manager.run_on_candle(symbol, history_df, context=context)
 
         # Handle signals
         for signal in signals:

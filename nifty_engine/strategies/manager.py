@@ -75,11 +75,11 @@ class StrategyManager:
                 logger.info(f"Updated code for strategy: {name}")
                 self.load_strategies()
 
-    def run_on_candle(self, symbol, df):
+    def run_on_candle(self, symbol, df, context=None):
         signals = []
         for name, strategy in self.strategies.items():
             if strategy.enabled and strategy.symbol == symbol:
-                signal = strategy.on_candle(df)
+                signal = strategy.on_candle(df, context)
                 if signal:
                     signals.append(signal)
         return signals
