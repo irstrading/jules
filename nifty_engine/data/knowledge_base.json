@@ -1,0 +1,50 @@
+{
+    "nifty_50_weights": {
+        "RELIANCE": 9.2,
+        "HDFCBANK": 11.5,
+        "ICICIBANK": 7.8,
+        "INFY": 5.5,
+        "BHARTIARTL": 4.2,
+        "SBIN": 3.1,
+        "LT": 3.8,
+        "ITC": 3.9,
+        "AXISBANK": 3.3,
+        "TCS": 3.7
+    },
+    "sectors": {
+        "Banking": {
+            "weightage": 21.16,
+            "stocks": ["HDFCBANK", "ICICIBANK", "SBIN", "AXISBANK", "KOTAKBANK"]
+        },
+        "IT": {
+            "weightage": 11.3,
+            "stocks": ["INFY", "TCS", "HCLTECH", "WIPRO", "TECHM"]
+        },
+        "Oil & Gas": {
+            "weightage": 11.16,
+            "stocks": ["RELIANCE", "ONGC", "BPCL"]
+        },
+        "Automobile": {
+            "weightage": 7.55,
+            "stocks": ["TATAMOTORS", "M&M", "MARUTI", "BAJAJ-AUTO"]
+        },
+        "Finance": {
+            "weightage": 6.38,
+            "stocks": ["BAJFINANCE", "BAJAJFINSV", "CHOLAFIN"]
+        },
+        "FMCG": {
+            "weightage": 5.87,
+            "stocks": ["ITC", "HUL", "NESTLEIND"]
+        }
+    },
+    "market_rules": {
+        "SectorRotation": "If IT is weak, look at Banking or Pharma for stability.",
+        "ExpiryDay": "High Gamma volatility usually occurs after 1:30 PM.",
+        "NiftyMovers": "Reliance and HDFC Bank combined can move Nifty 50+ points alone.",
+        "GlobalImpact": "US Nasdaq highly impacts NIFTY IT sector sentiment."
+    },
+    "impact_behavior": [
+        {"event": "Budget Day", "behavior": "High IV, wide swings, usually ranges 2-4%."},
+        {"event": "RBI Policy", "behavior": "Direct impact on Bank Nifty and Banking stocks."}
+    ]
+}

@@ -66,13 +66,13 @@ class Database:
         """
         Helper method for to_sql to handle conflicts (UPSERT equivalent for older SQLite)
         """
-        data = [dict(zip(keys, row)) for row in data_iter]
-        cursor = conn.cursor()
-        for row in data:
-            columns = ', '.join(row.keys())
-            placeholders = ', '.join(['?' for _ in row])
+        # In pandas to_sql, 'conn' passed to the method is a sqlite3 Cursor if using sqlite3
+        for row in data_iter:
+            row_dict = dict(zip(keys, row))
+            columns = ', '.join(row_dict.keys())
+            placeholders = ', '.join(['?' for _ in row_dict])
             sql = f"INSERT OR REPLACE INTO {table.name} ({columns}) VALUES ({placeholders})"
-            cursor.execute(sql, tuple(row.values()))
+            conn.execute(sql, tuple(row_dict.values()))
 
     def get_last_candles(self, symbol, interval='1m', limit=500):
         query = f"""

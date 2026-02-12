@@ -7,6 +7,8 @@ from nifty_engine.data.database import Database
 from nifty_engine.strategies.manager import StrategyManager
 from nifty_engine.communicator.telegram_bot import TelegramBot
 from nifty_engine.config import NIFTY_SYMBOL
+from nifty_engine.core.watchdog import ConnectionWatchdog, AutoReconnect
+from nifty_engine.core.movers import NiftyMovers
 import pandas as pd
 from datetime import datetime, timedelta
 
@@ -19,6 +21,9 @@ class NiftyEngine:
         self.ingestor = AngelOneIngestor()
         self.strategy_manager = StrategyManager(self.db)
         self.bot = TelegramBot()
+        self.watchdog = ConnectionWatchdog(timeout_seconds=30)
+        self.reconnector = AutoReconnect(self.ingestor)
+        self.movers = NiftyMovers()
         self.running = False
         self.tick_data = [] # Buffer for ticks to aggregate into candles
 
@@ -35,17 +40,33 @@ class NiftyEngine:
         await self.bot.start_bot()
 
         # 3. Login to Angel One
-        # In production, this would be:
-        # if self.ingestor.login():
-        #     self.ingestor.set_on_tick_callback(self.on_tick)
-        #     # Subscribe to NIFTY (Token for NIFTY Index is usually '99926000' for NSE)
-        #     self.ingestor.connect_websocket("nifty_feed", 1, 1, [{"exchangeType": 1, "tokens": ["99926000"]}])
+        if self.ingestor.login():
+            self.ingestor.set_on_tick_callback(self.on_tick)
+
+            # 4. Warm-up: Fetch last 5 days of 1-minute candles
+            to_date = datetime.now().strftime('%Y-%m-%d %H:%M')
+            from_date = (datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d %H:%M')
+            logger.info(f"Warming up indicators from {from_date} to {to_date}...")
+
+            hist_data = self.ingestor.fetch_historical_data("99926000", "NSE", "ONE_MINUTE", from_date, to_date)
+            if hist_data:
+                df_hist = pd.DataFrame(hist_data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+                self.db.save_candles(df_hist, NIFTY_SYMBOL)
+                logger.info("Warm-up complete.")
+
+            # 5. Connect WebSocket
+            # Token '99926000' for NIFTY Index on NSE
+            self.ingestor.connect_websocket("nifty_feed", 1, 1, [{"exchangeType": 1, "tokens": ["99926000"]}])
+        else:
+            logger.error("Failed to login to Angel One. System running in OFFLINE mode.")
 
         self.running = True
         logger.info("Nifty Engine is now running!")
 
     def on_tick(self, tick):
         """Callback for live ticks"""
+        self.watchdog.notify_tick()
+
         if self.db.get_config("kill_switch") == "ON":
             return
 
@@ -100,13 +121,27 @@ class NiftyEngine:
             asyncio.create_task(self.bot.send_alert(f"[{signal['strategy']}] {signal['symbol']}: {signal['message']} at {signal['price']}"))
 
     async def monitor_system_loop(self):
-        """Monitor for Kill Switch or Strategy updates from UI"""
+        """Monitor for Kill Switch, Connection Health, and Strategy updates"""
         while self.running:
+            # 1. Sync Strategies
             self.strategy_manager.sync_with_db()
-            if self.db.get_config("kill_switch") == "ON" and self.running:
-                logger.warning("🚨 KILL SWITCH DETECTED! Stopping all operations.")
-                # In real app, we might want to keep the process alive but stop trading
-                # self.running = False
+
+            # 2. Check Connection
+            if not self.watchdog.check_connection():
+                logger.error("📡 Connection Timeout Detected!")
+                await self.bot.send_alert("⚠️ Connection Timeout! Attempting auto-reconnect...")
+                if self.reconnector.should_retry():
+                    if self.reconnector.attempt_reconnect():
+                        self.watchdog.reset()
+                        await self.bot.send_alert("✅ Connection Restored.")
+                else:
+                    logger.critical("❌ Max Reconnection Retries Reached!")
+                    await self.bot.send_alert("🛑 Critical Failure: Reconnection failed multiple times.")
+
+            # 3. Check Kill Switch
+            if self.db.get_config("kill_switch") == "ON":
+                logger.warning("🚨 KILL SWITCH ACTIVE!")
+
             await asyncio.sleep(5)
 
     async def stop(self):

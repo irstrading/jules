@@ -107,6 +107,28 @@ class GEX:
 
         return call_gex + put_gex
 
+# ==========================================
+# PART 4: STRADDLE & OPTIONS ANALYSIS
+# ==========================================
+class OptionsAnalyzer:
+    """
+    Logic for Straddles, Strangles, and Option Chain Analysis.
+    """
+    @staticmethod
+    def calculate_straddle_price(ce_price, pe_price):
+        """Returns combined premium of CE and PE at the same strike."""
+        return round(ce_price + pe_price, 2)
+
+    @staticmethod
+    def calculate_pcr_trend(oi_history):
+        """
+        Calculates PCR change over time.
+        oi_history: list of dicts {'timestamp': ..., 'pcr': ...}
+        """
+        if len(oi_history) < 2:
+            return 0
+        return round(oi_history[-1]['pcr'] - oi_history[0]['pcr'], 4)
+
 if __name__ == "__main__":
     # Test Greeks
     greeks = Greeks.calculate('c', 24500, 24600, 0.02, 0.10, 0.15)

@@ -4,7 +4,6 @@ numpy
 scipy
 streamlit
 python-telegram-bot
-sqlalchemy
 pyotp
 python-dotenv
 plotly
