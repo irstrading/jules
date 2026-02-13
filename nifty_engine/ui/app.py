@@ -59,7 +59,7 @@ def main():
         st.image("https://openalgo.in/assets/img/logo.png", width=150) # Mock logo or text
         st.title("OpenAlgo v3")
         st.divider()
-        menu = st.radio("Navigation", ["Dashboard", "Option Chain", "Rules Engine", "Algo Study Center", "Settings"])
+        menu = st.radio("Navigation", ["Dashboard", "Option Chain", "Strategy Builder", "Rules Engine", "Algo Study Center", "Settings"])
 
         st.divider()
         engine_running = st.session_state.db.get_config("engine_running", "OFF") == "ON"
@@ -81,6 +81,8 @@ def main():
         render_dashboard()
     elif menu == "Option Chain":
         render_option_chain()
+    elif menu == "Strategy Builder":
+        render_strategy_builder()
     elif menu == "Rules Engine":
         render_rules()
     elif menu == "Algo Study Center":
@@ -269,6 +271,71 @@ def render_study_center():
     c2.metric("Gamma", "Acceleration", "Delta Sensitivity")
     c3.metric("Theta", "Time Decay", "Daily Erosion")
     c4.metric("Vega", "Volatility", "IV Sensitivity")
+
+def render_strategy_builder():
+    st.markdown("<div class='main-header'>Advanced Strategy Builder</div>", unsafe_allow_html=True)
+    st.info("Build and upload your Python strategies. Changes are applied instantly.")
+
+    # 1. Strategy List & Status
+    st.session_state.strategy_manager.load_strategies()
+    strategies = st.session_state.strategy_manager.strategies
+
+    if not strategies:
+        st.warning("No strategies found in nifty_engine/strategies/")
+    else:
+        for name, strategy in strategies.items():
+            c1, c2, c3 = st.columns([3, 1, 1])
+            c1.markdown(f"**{name}** (Symbol: {strategy.symbol}, Timeframe: {strategy.timeframe})")
+
+            # Use DB status
+            is_on = st.session_state.db.get_config(f"strategy_{name}", "OFF") == "ON"
+            if is_on:
+                if c2.button("STOP", key=f"stop_{name}", use_container_width=True):
+                    st.session_state.strategy_manager.disable_strategy(name)
+                    st.rerun()
+            else:
+                if c2.button("START", key=f"start_{name}", use_container_width=True, type="primary"):
+                    st.session_state.strategy_manager.enable_strategy(name)
+                    st.rerun()
+
+            if c3.button("EDIT", key=f"edit_{name}", use_container_width=True):
+                st.session_state.editing_strategy = name
+
+    st.divider()
+
+    # 2. Strategy Editor
+    editing_name = st.session_state.get("editing_strategy")
+    if editing_name and editing_name in strategies:
+        st.subheader(f"Editing: {editing_name}")
+        strategy = strategies[editing_name]
+        filename = getattr(strategy, '_filename', 'unknown.py')
+        filepath = os.path.join("nifty_engine/strategies", filename)
+
+        with open(filepath, 'r') as f:
+            code = f.read()
+
+        new_code = st.text_area("Python Code", value=code, height=400)
+
+        c_save, c_cancel = st.columns(2)
+        if c_save.button("SAVE & RELOAD", type="primary", use_container_width=True):
+            st.session_state.strategy_manager.update_strategy_code(editing_name, new_code)
+            st.success(f"Strategy {editing_name} updated!")
+            del st.session_state.editing_strategy
+            st.rerun()
+        if c_cancel.button("CANCEL", use_container_width=True):
+            del st.session_state.editing_strategy
+            st.rerun()
+    else:
+        st.subheader("Upload New Strategy")
+        uploaded_file = st.file_uploader("Choose a Python file", type="py")
+        if uploaded_file is not None:
+            filename = uploaded_file.name
+            save_path = os.path.join("nifty_engine/strategies", filename)
+            with open(save_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            st.success(f"Strategy {filename} uploaded successfully!")
+            st.session_state.strategy_manager.load_strategies()
+            st.rerun()
 
 def render_rules():
     st.markdown("<div class='main-header'>Market Rules Engine</div>", unsafe_allow_html=True)

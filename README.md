@@ -46,4 +46,13 @@ Run `python launcher.py` again, select **Option 1**, and you are live! 🚀
 ## 🛡️ Safety First
 The system includes a **Global Kill Switch**. If anything goes wrong, hit the Red Button in the dashboard or use your Telegram command to stop all execution instantly.
 
+---
+
+## 🛠️ Troubleshooting
+
+- **ModuleNotFoundError:** If you see this, ensure you run the code via `launcher.py`. It automatically sets the correct `PYTHONPATH` so the internal modules can find each other.
+- **Angel One Login:** If your TOTP fails, double-check your `ANGEL_ONE_TOTP_SECRET` in `.env`. It should be the alphanumeric key provided by Angel One during 2FA setup.
+- **Windows/PowerShell:** If script execution is disabled on your machine, you might need to run:
+  `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` in PowerShell.
+
 **Happy Trading! Your professional assistant is now ready.**

@@ -119,16 +119,53 @@ def check_readiness():
 def start_engine():
     print("🚀 Starting Nifty Engine...")
     env = os.environ.copy()
-    env["PYTHONPATH"] = f"{os.getcwd()}:{env.get('PYTHONPATH', '')}"
+    # Cross-platform PYTHONPATH separator
+    current_pp = env.get('PYTHONPATH', '')
+    if current_pp:
+        env["PYTHONPATH"] = f"{os.getcwd()}{os.pathsep}{current_pp}"
+    else:
+        env["PYTHONPATH"] = os.getcwd()
     return subprocess.Popen([sys.executable, "nifty_engine/run_engine.py"], env=env)
 
 def start_dashboard():
     print("📊 Starting Streamlit Dashboard...")
     # Add PYTHONPATH so streamlit can find nifty_engine
     env = os.environ.copy()
-    env["PYTHONPATH"] = f"{os.getcwd()}:{env.get('PYTHONPATH', '')}"
+    current_pp = env.get('PYTHONPATH', '')
+    if current_pp:
+        env["PYTHONPATH"] = f"{os.getcwd()}{os.pathsep}{current_pp}"
+    else:
+        env["PYTHONPATH"] = os.getcwd()
     # Use 'python -m streamlit' to ensure we use the streamlit associated with sys.executable
     return subprocess.Popen([sys.executable, "-m", "streamlit", "run", "nifty_engine/ui/app.py"], env=env)
+
+def run_demo_setup():
+    print("\n🎮 Setting up Demo Mode...")
+    try:
+        from nifty_engine.data.database import Database
+        import pandas as pd
+        import numpy as np
+        import json
+
+        db = Database()
+        # 1. Create fake candles
+        timestamps = pd.date_range(end=datetime.now(), periods=100, freq='1min')
+        prices = [24500 + (np.sin(i/10)*50) + (np.random.randn()*5) for i in range(100)]
+        df = pd.DataFrame({'timestamp': timestamps, 'open': prices, 'high': prices, 'low': prices, 'close': prices, 'volume': 1000})
+        db.save_candles(df, "NIFTY")
+
+        # 2. Create fake market state
+        market_state = {
+            "alignment": {"bullish_pct": 75.0, "bearish_pct": 20.0, "status": "Strong Bullish Trend (70%+ Aligned)"},
+            "stock_states": {"RELIANCE": {"lp": 2505, "pc": 2480}, "HDFCBANK": {"lp": 1610, "pc": 1590}},
+            "updated_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        db.set_config("market_state", json.dumps(market_state))
+        db.set_config("engine_running", "ON")
+
+        print("✅ Demo data populated. You can now start the Dashboard (Option 3).")
+    except Exception as e:
+        print(f"❌ Demo setup failed: {e}")
 
 def main():
     print("=========================================")
@@ -146,6 +183,7 @@ def main():
     print("\n1. Start Engine & Dashboard (Full Production Mode)")
     print("2. Start Engine Only")
     print("3. Start Dashboard Only")
+    print("4. Run Demo Mode Setup (Populate Mock Data)")
     print("q. Quit")
 
     choice = input("\nEnter your choice: ").strip().lower()
@@ -160,6 +198,9 @@ def main():
         processes.append(start_engine())
     elif choice == '3':
         processes.append(start_dashboard())
+    elif choice == '4':
+        run_demo_setup()
+        sys.exit(0)
     elif choice == 'q':
         sys.exit(0)
     else:

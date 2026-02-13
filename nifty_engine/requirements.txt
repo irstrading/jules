@@ -8,3 +8,7 @@ pyotp
 python-dotenv
 plotly
 streamlit-autorefresh
+logzero
+websocket-client
+pytz
+requests

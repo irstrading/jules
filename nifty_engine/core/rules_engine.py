@@ -2,8 +2,11 @@
 
 import json
 import os
+import logging
 from datetime import datetime
 import pytz
+
+logger = logging.getLogger(__name__)
 
 class RulesEngine:
     def __init__(self, rules_path=None):
