@@ -4,14 +4,62 @@ import subprocess
 import sys
 import os
 import time
+import shutil
 from datetime import datetime
-import pytz
-from nifty_engine.config import (
-    validate_config, ANGEL_ONE_API_KEY, ANGEL_ONE_CLIENT_CODE,
-    ANGEL_ONE_PASSWORD, ANGEL_ONE_TOTP_SECRET, TELEGRAM_BOT_TOKEN
-)
+
+def install_dependencies():
+    print("📦 Checking & Installing Dependencies...")
+    req_path = os.path.join("nifty_engine", "requirements.txt")
+    if os.path.exists(req_path):
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", req_path])
+            print("✅ Dependencies ready.")
+        except Exception as e:
+            print(f"❌ Failed to install dependencies: {e}")
+    else:
+        print("⚠️ requirements.txt not found.")
+
+def setup_env_file():
+    if not os.path.exists(".env"):
+        print("📝 Creating .env from example...")
+        if os.path.exists(".env.example"):
+            shutil.copy(".env.example", ".env")
+            print("✅ .env created. PLEASE FILL YOUR CREDENTIALS IN .env FILE!")
+        else:
+            print("❌ .env.example not found. Cannot create .env.")
+    else:
+        print("✅ .env file detected.")
+
+def create_dirs():
+    dirs = ["nifty_engine/logs", "nifty_engine/strategies", "nifty_engine/data"]
+    for d in dirs:
+        if not os.path.exists(d):
+            os.makedirs(d)
+            print(f"📁 Created directory: {d}")
+
+# Delayed import to ensure dependencies are installed first
+def get_config_safely():
+    try:
+        from nifty_engine.config import (
+            validate_config, ANGEL_ONE_API_KEY, ANGEL_ONE_CLIENT_CODE,
+            ANGEL_ONE_PASSWORD, ANGEL_ONE_TOTP_SECRET, TELEGRAM_BOT_TOKEN
+        )
+        return {
+            "valid": validate_config(),
+            "api_key": ANGEL_ONE_API_KEY,
+            "client_code": ANGEL_ONE_CLIENT_CODE,
+            "tg_token": TELEGRAM_BOT_TOKEN
+        }
+    except ImportError:
+        return None
 
 def is_market_open():
+    try:
+        import pytz
+    except ImportError:
+        return False, "pytz not installed"
+
+    tz = pytz.timezone('Asia/Kolkata')
     """Checks if Indian Market is currently open (09:15 - 15:30 IST)"""
     tz = pytz.timezone('Asia/Kolkata')
     now = datetime.now(tz)
@@ -32,10 +80,16 @@ def is_market_open():
 
 def check_readiness():
     print("\n🔍 Running System Readiness Check...")
+
+    config = get_config_safely()
+    if not config:
+        print("❌ Critical: Could not load configuration. Ensure dependencies are installed.")
+        return False
+
     ready = True
 
     # 1. Config Validation
-    if validate_config():
+    if config["valid"]:
         print("✅ Configuration: VALID")
     else:
         print("❌ Configuration: INVALID (Check your .env file)")
@@ -47,16 +101,9 @@ def check_readiness():
         print(f"✅ Market Status: OPEN")
     else:
         print(f"⚠️ Market Status: CLOSED ({status})")
-        # We don't block start just because market is closed (for testing)
 
-    # 3. Database Check
-    if os.path.exists("nifty_data.db"):
-        print("✅ Database: FOUND")
-    else:
-        print("⚠️ Database: NOT FOUND (Will be created on start)")
-
-    # 4. Telegram Token Check
-    if TELEGRAM_BOT_TOKEN and ":" in TELEGRAM_BOT_TOKEN:
+    # 3. Telegram Token Check
+    if config["tg_token"] and ":" in config["tg_token"]:
         print("✅ Telegram Token: FORMAT VALID")
     else:
         print("❌ Telegram Token: MISSING or INVALID")
@@ -65,7 +112,7 @@ def check_readiness():
     if ready:
         print("\n🚀 SYSTEM READY ✅")
     else:
-        print("\n🛑 FIX ERRORS ABOVE BEFORE STARTING ❌")
+        print("\n🛑 FIX ERRORS ABOVE IN .env FILE ❌")
 
     return ready
 
@@ -86,6 +133,11 @@ def main():
     print("=========================================")
     print("🔥 Nifty Advanced Algo Engine Launcher 🔥")
     print("=========================================")
+
+    # Auto Setup
+    create_dirs()
+    install_dependencies()
+    setup_env_file()
 
     is_ready = check_readiness()
 

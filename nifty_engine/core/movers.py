@@ -4,8 +4,12 @@ import json
 import os
 
 class NiftyMovers:
-    def __init__(self, kb_path="nifty_engine/data/knowledge_base.json"):
-        self.kb_path = kb_path
+    def __init__(self, kb_path=None):
+        if kb_path is None:
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            self.kb_path = os.path.join(base_dir, "data", "knowledge_base.json")
+        else:
+            self.kb_path = kb_path
         self.weights = {}
         self.sectors = {}
         self.load_knowledge_base()

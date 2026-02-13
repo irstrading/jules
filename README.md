@@ -1,83 +1,49 @@
-# 🚀 OpenAlgo Nifty v3: Advanced Dream Assistant
+# 🔥 Nifty Advanced Algo Engine (OpenAlgo Style)
 
-Welcome to your professional-grade Nifty/Bank Nifty trading engine. This system is designed for **VS Code** and follows the modular "OpenAlgo" architecture.
+This is a professional-grade, modular Nifty/Bank Nifty trading engine designed for extreme ease of use. It follows the "OpenAlgo" philosophy: **One-click install, Zero friction.**
 
 ---
 
-## 🛠️ Step-by-Step Installation Guide (VS Code)
+## ⚡ 3-Minute "Quick Start" (VS Code)
 
-### 1. Open Project in VS Code
-- Open VS Code.
-- Go to `File > Open Folder...` and select the directory containing this project.
+### 1. Open in VS Code
+Open the project folder in VS Code.
 
-### 2. Set Up Python Environment
-Open the VS Code Terminal (`Ctrl + \`` or `Terminal > New Terminal`) and run:
-```bash
-# Create a virtual environment
-python -m venv venv
-
-# Activate it (Windows)
-.\venv\Scripts\activate
-
-# Activate it (Mac/Linux)
-source venv/bin/activate
-```
-
-### 3. Install Dependencies
-Run the following command to install all necessary libraries:
-```bash
-pip install -r nifty_engine/requirements.txt
-```
-
-### 4. Configure Your Credentials
-1. Look for the `.env.example` file in the root directory.
-2. **Rename it** to `.env`.
-3. Fill in your Angel One credentials:
-   - `ANGEL_ONE_CLIENT_CODE`: Your User ID.
-   - `ANGEL_ONE_PASSWORD`: Your login password.
-   - `ANGEL_ONE_API_KEY`: Your App API Key.
-   - `ANGEL_ONE_TOTP_SECRET`: Your 32-digit TOTP seed.
-   - `TELEGRAM_BOT_TOKEN`: Your bot token from @BotFather.
-   - `TELEGRAM_CHAT_ID`: Your personal Chat ID.
-
-### 5. Launch the System
-Run the centralized launcher script:
+### 2. Run the Launcher
+Open your terminal (`Ctrl + \``) and simply run:
 ```bash
 python launcher.py
 ```
-- **Option 1:** Starts both the Engine (Live Data) and the Dashboard.
-- **Option 2:** Starts only the Engine (Low resource mode).
-- **Option 3:** Starts only the Dashboard (To view historical data).
+*The script will automatically install all dependencies and create your `.env` file.*
+
+### 3. Fill Your Credentials
+Open the newly created `.env` file and paste your Angel One and Telegram details.
+
+### 4. Start Trading
+Run `python launcher.py` again, select **Option 1**, and you are live! 🚀
 
 ---
 
-## 📊 How to Access & Learn
+## 🛠️ Key Features (The "Impossible" Made Easy)
 
-### 🌐 Accessing the Dashboard
-Once launched, VS Code will show a link: `http://localhost:8501`.
-- Hold `Ctrl` and click the link to open your professional trading terminal in your browser.
-
-### 🧠 The Algo Study Center
-To understand the complex data (GEX, MMI, 70% Rule):
-1. Open the Dashboard.
-2. Select **"Algo Study Center"** from the left sidebar.
-3. This is your built-in textbook explaining all advanced concepts.
-
-### 🤖 AI Market Interpretation
-Check the **"AI Market Interpretation"** box on the main Dashboard. It automatically reads the live market data and tells you the "story" of the current trend in plain English.
+- **One-Click Setup:** No manual `pip install` or file renaming required.
+- **AI-Enhanced Dashboard:** Live 70% Index Alignment, MMI (Market Mood), and ATM Straddle charts.
+- **Auto-Token Discovery:** Never worry about weekly expiry changes; the engine handles it.
+- **Resilient Connection:** Built-in auto-reconnect with session refresh.
+- **Algo Study Center:** Learn GEX, Greeks, and Sentiment directly inside the dashboard.
 
 ---
 
-## ⚠️ Safety Mechanism: The Kill Switch
-- **Emergency Stop:** Press the large red button on the Dashboard sidebar to immediately stop all logic and disconnect.
-- **Reset:** To resume, you must click "Reset Kill Switch" in the sidebar.
+## 📂 Project Structure
+
+- `nifty_engine/`: Core logic, UI, and strategies.
+- `launcher.py`: The magical one-click entry point.
+- `nifty_data.db`: Your local high-speed persistence layer.
+- `.env`: Your secure credentials vault.
 
 ---
 
-## 🛡️ Production Readiness Checklist
-- [ ] `.env` file renamed and filled.
-- [ ] Internet connection is stable.
-- [ ] `scrip_master.json` will auto-download on first run.
-- [ ] Market is open (09:15 AM - 03:30 PM).
+## 🛡️ Safety First
+The system includes a **Global Kill Switch**. If anything goes wrong, hit the Red Button in the dashboard or use your Telegram command to stop all execution instantly.
 
-**Happy Trading! Your assistant is now ready.**
+**Happy Trading! Your professional assistant is now ready.**

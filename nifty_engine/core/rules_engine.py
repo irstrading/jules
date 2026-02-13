@@ -6,8 +6,12 @@ from datetime import datetime
 import pytz
 
 class RulesEngine:
-    def __init__(self, rules_path="nifty_engine/data/knowledge_base.json"):
-        self.rules_path = rules_path
+    def __init__(self, rules_path=None):
+        if rules_path is None:
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            self.rules_path = os.path.join(base_dir, "data", "knowledge_base.json")
+        else:
+            self.rules_path = rules_path
         self.rules = {}
         self.load_rules()
 

@@ -1,9 +1,14 @@
 # nifty_engine/core/ai_insights.py
 
 import json
+import os
 
 class AIInsights:
-    def __init__(self, knowledge_base_path="nifty_engine/data/knowledge_base.json"):
+    def __init__(self, knowledge_base_path=None):
+        if knowledge_base_path is None:
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            knowledge_base_path = os.path.join(base_dir, "data", "knowledge_base.json")
+
         with open(knowledge_base_path, 'r') as f:
             self.kb = json.load(f)
 
