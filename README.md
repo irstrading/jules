@@ -16,6 +16,9 @@ python launcher.py
 ```
 *The script will automatically install all dependencies and create your `.env` file.*
 
+**For Windows (Single Click):**
+Simply double-click `start.bat`. This will run the Engine and Dashboard in a **single terminal window**.
+
 ### 3. Fill Your Credentials
 Open the newly created `.env` file and paste your Angel One and Telegram details.
 

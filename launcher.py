@@ -5,6 +5,7 @@ import sys
 import os
 import time
 import shutil
+import argparse
 from datetime import datetime
 
 def install_dependencies():
@@ -168,6 +169,10 @@ def run_demo_setup():
         print(f"❌ Demo setup failed: {e}")
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--auto", action="store_true", help="Auto-start Engine and Dashboard")
+    args, unknown = parser.parse_known_args()
+
     print("=========================================")
     print("🔥 Nifty Advanced Algo Engine Launcher 🔥")
     print(f"🐍 Environment: Python {sys.version.split()[0]}")
@@ -180,13 +185,17 @@ def main():
 
     is_ready = check_readiness()
 
-    print("\n1. Start Engine & Dashboard (Full Production Mode)")
-    print("2. Start Engine Only")
-    print("3. Start Dashboard Only")
-    print("4. Run Demo Mode Setup (Populate Mock Data)")
-    print("q. Quit")
+    if args.auto:
+        print("\n🤖 AUTO-START MODE ACTIVATED")
+        choice = '1'
+    else:
+        print("\n1. Start Engine & Dashboard (Full Production Mode)")
+        print("2. Start Engine Only")
+        print("3. Start Dashboard Only")
+        print("4. Run Demo Mode Setup (Populate Mock Data)")
+        print("q. Quit")
 
-    choice = input("\nEnter your choice: ").strip().lower()
+        choice = input("\nEnter your choice: ").strip().lower()
 
     processes = []
 
