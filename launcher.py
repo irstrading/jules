@@ -127,11 +127,13 @@ def start_dashboard():
     # Add PYTHONPATH so streamlit can find nifty_engine
     env = os.environ.copy()
     env["PYTHONPATH"] = f"{os.getcwd()}:{env.get('PYTHONPATH', '')}"
-    return subprocess.Popen(["streamlit", "run", "nifty_engine/ui/app.py"], env=env)
+    # Use 'python -m streamlit' to ensure we use the streamlit associated with sys.executable
+    return subprocess.Popen([sys.executable, "-m", "streamlit", "run", "nifty_engine/ui/app.py"], env=env)
 
 def main():
     print("=========================================")
     print("🔥 Nifty Advanced Algo Engine Launcher 🔥")
+    print(f"🐍 Environment: Python {sys.version.split()[0]}")
     print("=========================================")
 
     # Auto Setup
