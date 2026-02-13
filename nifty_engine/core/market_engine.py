@@ -37,13 +37,17 @@ class Greeks:
             theta = (- (S * norm.pdf(d1) * sigma) / (2 * np.sqrt(t)) + r * K * np.exp(-r * t) * norm.cdf(-d2))
 
         gamma = norm.pdf(d1) / (S * sigma * np.sqrt(t))
-        vega = S * norm.pdf(d1) * np.sqrt(t) # Note: Result is usually divided by 100 for percentage view
+        vega = S * norm.pdf(d1) * np.sqrt(t)
+
+        # Vomma: Sensitivity of Vega to Volatility
+        vomma = vega * d1 * d2 / sigma
 
         return {
             'delta': round(delta, 3),
             'gamma': round(gamma, 6),
             'theta': round(theta / 365, 3), # Daily Theta decay
-            'vega': round(vega / 100, 3)
+            'vega': round(vega / 100, 3),
+            'vomma': round(vomma / 100, 3)
         }
 
 # ==========================================
@@ -206,6 +210,51 @@ class IndexAlignment:
             "bearish_pct": round(bear_pct, 1),
             "status": status
         }
+
+# ==========================================
+# PART 7: STOCK-SPECIFIC SWING ANALYZER
+# ==========================================
+class StockAnalyzer:
+    """
+    Specialized analyzer for Stock Options (1-5 day swings).
+    """
+    @staticmethod
+    def analyze_iv_regime(price_change, iv_change):
+        if price_change > 0 and iv_change > 0:
+            return "Accumulation (Rising IV + Price ↑)"
+        elif price_change > 0 and iv_change < 0:
+            return "Short Covering (Falling IV + Price ↑)"
+        elif price_change < 0 and iv_change > 0:
+            return "Panic / Fresh Shorts (Rising IV + Price ↓)"
+        elif abs(price_change) < 0.5 and iv_change < 0:
+            return "Option Selling (Falling IV + Range)"
+        return "Neutral"
+
+    @staticmethod
+    def calculate_swing_score(data):
+        """
+        data: {
+            'structure': 'BULLISH'|'BEARISH'|'SIDEWAYS',
+            'sector_trend': 'SUPPORTIVE'|'DIVERGENT',
+            'gex': float,
+            'iv_trend': 'RISING'|'FALLING',
+            'vomma': 'HIGH'|'LOW',
+            'atm_oi': 'UNWINDING'|'BUILDUP'
+        }
+        """
+        score = 0
+
+        if data.get("structure") == "BULLISH": score += 2
+        if data.get("sector_trend") == "SUPPORTIVE": score += 2
+        if data.get("gex", 0) < 0: score += 1
+        if data.get("iv_trend") == "RISING": score += 2
+        if data.get("vomma") == "HIGH": score += 1
+        if data.get("atm_oi") == "UNWINDING": score += 2
+
+        # Result mapping
+        if score >= 8: return "STRONG SWING BUY", score
+        if score >= 6: return "CONDITIONAL BUY", score
+        return "AVOID", score
 
 if __name__ == "__main__":
     # Test Greeks

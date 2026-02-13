@@ -77,11 +77,17 @@ class StrategyManager:
 
     def run_on_candle(self, symbol, df, context=None):
         signals = []
+        if context is None:
+            context = {}
+        context['symbol'] = symbol
+
         for name, strategy in self.strategies.items():
-            if strategy.enabled and strategy.symbol == symbol:
-                signal = strategy.on_candle(df, context)
-                if signal:
-                    signals.append(signal)
+            if strategy.enabled:
+                # Check if symbol matches strategy instruments
+                if symbol in strategy.instruments:
+                    signal = strategy.on_candle(df, context)
+                    if signal:
+                        signals.append(signal)
         return signals
 
     def stop_all(self):

@@ -19,7 +19,11 @@
         "TITAN": {"weight": 1.5, "token": "3506"},
         "ASIANPAINT": {"weight": 1.4, "token": "236"},
         "ULTRACEMCO": {"weight": 1.1, "token": "11532"},
-        "TATASTEEL": {"weight": 1.1, "token": "3499"}
+        "TATASTEEL": {"weight": 1.1, "token": "3499"},
+        "HINDALCO": {"weight": 0.9, "token": "1085"},
+        "ONGC": {"weight": 0.8, "token": "2475"},
+        "POWERGRID": {"weight": 1.0, "token": "14977"},
+        "TATAMOTORS": {"weight": 1.3, "token": "3456"}
     },
     "sectors": {
         "Banking": {
@@ -67,6 +71,11 @@
         "RELIANCE": "Often used to hold Nifty when other sectors are falling.",
         "HDFCBANK": "Key driver for Bank Nifty; 1% move here is significant.",
         "INFY": "Sensitive to US economic data and Nasdaq performance.",
-        "ITC": "Considered a defensive stock; often rises when market is uncertain."
+        "ITC": "Considered a defensive stock; often rises when market is uncertain.",
+        "TATAMOTORS": "High volatility, sensitive to global JLR sales and auto policy."
+    },
+    "fo_stock_tiers": {
+        "Tier-1": ["RELIANCE", "HDFCBANK", "ICICIBANK", "INFY", "TCS", "SBIN", "AXISBANK", "LT", "TATAMOTORS"],
+        "Tier-2": ["ITC", "HINDALCO", "TATASTEEL", "ONGC", "POWERGRID"]
     }
 }

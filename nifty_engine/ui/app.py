@@ -59,7 +59,7 @@ def main():
         st.image("https://openalgo.in/assets/img/logo.png", width=150) # Mock logo or text
         st.title("OpenAlgo v3")
         st.divider()
-        menu = st.radio("Navigation", ["Dashboard", "Option Chain", "Strategy Builder", "Rules Engine", "Algo Study Center", "Settings"])
+        menu = st.radio("Navigation", ["Dashboard", "Stock Intelligence", "Option Chain", "Strategy Builder", "Rules Engine", "Algo Study Center", "Settings"])
 
         st.divider()
         engine_running = st.session_state.db.get_config("engine_running", "OFF") == "ON"
@@ -81,6 +81,8 @@ def main():
         render_dashboard()
     elif menu == "Option Chain":
         render_option_chain()
+    elif menu == "Stock Intelligence":
+        render_stock_intelligence()
     elif menu == "Strategy Builder":
         render_strategy_builder()
     elif menu == "Rules Engine":
@@ -184,6 +186,46 @@ def render_dashboard():
             arrow = "▲" if direction == 1 else ("▼" if direction == -1 else "▬")
             st.markdown(f"**{symbol}** ({weight}%): <span style='color:{color};'>{arrow}</span>", unsafe_allow_html=True)
 
+
+def render_stock_intelligence():
+    st.markdown("<div class='main-header'>Stock Swing Intelligence (1-5 Days)</div>", unsafe_allow_html=True)
+
+    tier1 = st.session_state.movers.get_stocks_by_tier("Tier-1")
+
+    st.write("### Tier-1 F&O Stocks (High Liquidity)")
+
+    # Grid of Stock Analysis
+    cols = st.columns(3)
+    for i, symbol in enumerate(tier1):
+        with cols[i % 3]:
+            # Mock Data for UI
+            price_change = np.random.uniform(-2, 2)
+            iv_change = np.random.uniform(-5, 5)
+            regime = StockAnalyzer.analyze_iv_regime(price_change, iv_change)
+
+            # Score Calculation
+            data = {
+                'structure': 'BULLISH' if price_change > 0 else 'BEARISH',
+                'sector_trend': 'SUPPORTIVE',
+                'gex': -1,
+                'iv_trend': 'RISING' if iv_change > 0 else 'FALLING',
+                'vomma': 'HIGH',
+                'atm_oi': 'UNWINDING'
+            }
+            signal, score = StockAnalyzer.calculate_swing_score(data)
+
+            # Metric Card
+            color = "#10b981" if score >= 8 else ("#3b82f6" if score >= 6 else "#64748b")
+            st.markdown(f"""
+            <div style='background: white; padding: 15px; border-radius: 10px; border-left: 5px solid {color}; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);'>
+                <h3 style='margin:0;'>{symbol}</h3>
+                <p style='margin: 5px 0; font-size: 14px; color: #64748b;'>{regime}</p>
+                <div style='display: flex; justify-content: space-between; align-items: center;'>
+                    <span style='font-weight: bold; color: {color};'>{signal}</span>
+                    <span style='background: #f1f5f9; padding: 2px 8px; border-radius: 5px;'>Score: {score}/10</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
 def render_option_chain():
     st.markdown("<div class='main-header'>Advanced Option Chain</div>", unsafe_allow_html=True)

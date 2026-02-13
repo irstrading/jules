@@ -22,6 +22,10 @@ class NiftyMovers:
                 self.weights = {k: v['weight'] for k, v in self.weights_data.items()}
                 self.token_to_symbol = {v['token']: k for k, v in self.weights_data.items()}
                 self.sectors = data.get("sectors", {})
+                self.tiers = data.get("fo_stock_tiers", {})
+
+    def get_stocks_by_tier(self, tier):
+        return self.tiers.get(tier, [])
 
     def get_token_list(self, exchange_type=1):
         """Returns token list for WebSocket subscription"""

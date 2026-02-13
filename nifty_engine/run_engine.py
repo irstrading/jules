@@ -15,7 +15,23 @@ from nifty_engine.core.rules_engine import RulesEngine
 import pandas as pd
 from datetime import datetime, timedelta
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Configure logging to both file and console
+log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+
+# Console Handler
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(log_formatter)
+root_logger.addHandler(console_handler)
+
+# File Handler
+if not os.path.exists("nifty_engine/logs"):
+    os.makedirs("nifty_engine/logs")
+file_handler = logging.FileHandler("nifty_engine/logs/engine.log")
+file_handler.setFormatter(log_formatter)
+root_logger.addHandler(file_handler)
+
 logger = logging.getLogger(__name__)
 
 class NiftyEngine:
