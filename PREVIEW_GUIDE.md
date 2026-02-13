@@ -1,51 +1,32 @@
-# 🖼️ ANZA OPTION ANALYSIS - Visual Preview Guide
+# 🖼️ ANZA PRO - Vibrant Visual Guide
 
-This guide describes the professional, institutional-grade interface of the ANZA system.
-
----
-
-## 1. 🎯 Market Intelligence Dashboard
-**Look & Feel:** Premium Dark Mode (`#0e1117`) with Gold Accents (`#f0ab48`).
-
-- **Top Banner:** Bold "ANZA" logo with institutional typography.
-- **Metric Row:** High-contrast cards showing:
-    - **Bullish Participation:** 🟢 Large green percentage (e.g., 85%).
-    - **Bearish Participation:** 🔴 Large red percentage.
-    - **Market Mood (MMI):** Dynamic index from Extreme Fear to Extreme Greed.
-- **AI Narrative:** An expander box titled "🤖 AI Market Interpretation" that prints professional insights like *"Broad-based Bullishness detected. High-confidence rally."*
-- **Straddle Chart:** An interactive Plotly chart with a blue premium line and a black dashed VWAP overlay.
-- **Live Terminal:** A real-time scrolling code-block at the bottom showing engine logs (connections, ticks, signals).
+This guide describes the professional, high-fidelity interface of the ANZA PRO v3.0 platform.
 
 ---
 
-## 2. 📈 Stock Intelligence Dashboard
-**Focus:** 1-5 Day Swing Trades.
+## 1. 🌈 Ultra-Vibrant UI/UX
+**Look & Feel:** The dashboard now supports multiple themes (Midnight Institutional, Cyberpunk Glow) with neon gradients and glassmorphism.
 
-- **Grid Layout:** 3-column grid of stock "Intelligence Cards".
-- **Each Card Includes:**
-    - **Stock Symbol:** (e.g., RELIANCE) in large white text.
-    - **Regime:** Status like *"Accumulation (Rising IV + Price ↑)"*.
-    - **Signal:** Large colored badge: `STRONG SWING BUY` (Green), `CONDITIONAL BUY` (Blue), or `AVOID` (Grey).
-    - **Swing Score:** High-level score out of 10 (e.g., `8/10`).
+- **Orbitron Typography:** High-tech institutional font for all critical headers and metrics.
+- **Glassmorphism Cards:** Semi-transparent cards with blur effects and animated hover scales.
+- **Neon Accents:** Vibrant green (`#00ff41`), gold (`#f0ab48`), and danger-red accents that pop against the obsidian background.
 
 ---
 
-## 3. ⛓️ Advanced Option Chain
-- **ATM Highlighting:** The current At-The-Money strike is highlighted in light blue.
-- **Behavior Tags:** Special column for behavior identification (e.g., `SC` for Short Covering, `LB` for Long Buildup).
-- **GEX Profile:** Summary banner at the bottom showing Negative/Positive GEX zones.
+## 2. 📊 Market Intelligence
+- **Dynamic KPIs:** Vibrant cards showing Index Alignment, Market Mood, and Net GEX with status indicators (e.g., "🌋 SHORT GAMMA REGIME").
+- **Institutional Charts:** High-fidelity Plotly charts with custom color schemes, area fills, and dashed VWAP overlays.
+- **AI Briefing:** A premium gold-bordered briefing box providing concise institutional summaries.
 
 ---
 
-## 4. 🏛️ Institutional Playbook (Study Center)
-- **Interactive Library:** A searchable database where you can click on patterns like *"Gamma Wall"* or *"FII Aggressive Short"*.
-- **Details:** Each pattern reveals its Detection logic, Meaning, Actionable advice, and Historical Success rate.
+## 3. 🖥️ Pro Master Terminal
+- **Real-Time Logs:** A dedicated scrolling green-on-black terminal window at the bottom of the Overview, showing raw engine ticks and system heartbeats.
 
 ---
 
-## 🛠️ How to View This Live
-1. Open your project folder.
-2. Double-click **`start.bat`**.
-3. Once the launcher opens, select **Option 4 (Demo Mode)**.
-4. Then select **Option 3 (Start Dashboard)**.
-5. Your browser will open the full, visual ANZA OPTION ANALYSIS dashboard.
+## ⚡ How to Experience the Vibrancy
+1. Double-click **`start.bat`**.
+2. Select **Option 4 (Run Demo Setup)** to populate the high-fidelity simulator.
+3. Select **Option 3 (Start Dashboard)**.
+4. Your browser will open the full, vibrant ANZA PRO dashboard. Use the sidebar to switch between themes like **Cyberpunk Glow**.
