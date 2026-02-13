@@ -8,3 +8,4 @@ pyotp
 python-dotenv
 plotly
 streamlit-autorefresh
+streamlit-option-menu
