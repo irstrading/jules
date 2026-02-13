@@ -1,6 +1,6 @@
-# 🔥 Nifty Advanced Algo Engine (OpenAlgo Style)
+# 🚀 ANZA OPTION ANALYSIS - Institutional Master Platform
 
-This is a professional-grade, modular Nifty/Bank Nifty trading engine designed for extreme ease of use. It follows the "OpenAlgo" philosophy: **One-click install, Zero friction.**
+A professional-grade, modular Nifty/Bank Nifty and Stock Option analysis engine designed for elite traders. Built with institutional-level logic: Greeks, GEX, Smart Money Tracking, and AI-driven market narratives.
 
 ---
 
@@ -9,15 +9,15 @@ This is a professional-grade, modular Nifty/Bank Nifty trading engine designed f
 ### 1. Open in VS Code
 Open the project folder in VS Code.
 
-### 2. Run the Launcher
-Open your terminal (`Ctrl + \``) and simply run:
-```bash
-python launcher.py
-```
-*The script will automatically install all dependencies and create your `.env` file.*
+### 2. Run the Platform
+**Windows (Recommended):**
+Simply double-click **`start.bat`**. This will:
+1.  Auto-install all required libraries.
+2.  Create your secure `.env` credentials file.
+3.  Launch both the **Analysis Engine** and **Institutional Dashboard** in a single window.
 
-**For Windows (Single Click):**
-Simply double-click `start.bat`. This will run the Engine and Dashboard in a **single terminal window**.
+**Other OS:**
+Run `python launcher.py --auto` in your terminal.
 
 ### 3. Fill Your Credentials
 Open the newly created `.env` file and paste your Angel One and Telegram details.

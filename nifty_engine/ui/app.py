@@ -15,29 +15,49 @@ from nifty_engine.core.movers import NiftyMovers
 import plotly.graph_objects as go
 from datetime import datetime
 
-st.set_page_config(page_title="OpenAlgo Nifty Dashboard", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="ANZA OPTION ANALYSIS", layout="wide", initial_sidebar_state="expanded")
 
-# --- Custom Styling (OpenAlgo Inspired) ---
+# --- Institutional Premium Styling ---
 st.markdown("""
 <style>
     .stApp {
-        background-color: #f8f9fa;
+        background-color: #0e1117;
+        color: #ffffff;
     }
     .main-header {
-        font-size: 24px;
-        font-weight: bold;
-        color: #1e293b;
-        margin-bottom: 20px;
+        font-size: 32px;
+        font-weight: 800;
+        color: #f0ab48;
+        margin-bottom: 25px;
+        letter-spacing: -0.5px;
+        border-bottom: 2px solid #f0ab48;
+        padding-bottom: 10px;
     }
     .metric-card {
-        background-color: #ffffff;
+        background-color: #1e293b;
         padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        border: 1px solid #334155;
     }
-    .status-online { color: #10b981; font-weight: bold; }
+    .metric-card h2 {
+        color: #f8fafc;
+        font-weight: 700;
+    }
+    .status-online { color: #22c55e; font-weight: bold; }
     .status-offline { color: #ef4444; font-weight: bold; }
+
+    /* Sidebar styling */
+    section[data-testid="stSidebar"] {
+        background-color: #0f172a;
+        border-right: 1px solid #1e293b;
+    }
+
+    /* Expander styling */
+    .streamlit-expanderHeader {
+        background-color: #1e293b;
+        border-radius: 8px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -56,8 +76,8 @@ def main():
 
     # --- Sidebar Navigation ---
     with st.sidebar:
-        st.image("https://openalgo.in/assets/img/logo.png", width=150) # Mock logo or text
-        st.title("OpenAlgo v3")
+        st.markdown("<h1 style='color: #f0ab48;'>ANZA</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 14px; margin-top: -15px;'><i>Institutional Option Intelligence</i></p>", unsafe_allow_html=True)
         st.divider()
         menu = st.radio("Navigation", ["Dashboard", "Stock Intelligence", "Option Chain", "Strategy Builder", "Rules Engine", "Algo Study Center", "Settings"])
 
@@ -79,6 +99,7 @@ def main():
 
     if menu == "Dashboard":
         render_dashboard()
+        render_terminal_view()
     elif menu == "Option Chain":
         render_option_chain()
     elif menu == "Stock Intelligence":
@@ -113,7 +134,7 @@ def render_dashboard():
         st.warning(f"### ⚖️ Market Alignment: {alignment['status']}")
 
     # AI Insights Section
-    with st.expander("🤖 **AI Market Interpretation** (OpenAlgo Intelligence)", expanded=True):
+    with st.expander("🤖 **AI Market Interpretation** (ANZA Intelligence)", expanded=True):
         from nifty_engine.core.ai_insights import AIInsights
         ai = AIInsights()
         # MMI calculation for logic
@@ -388,6 +409,19 @@ def render_rules():
 
         st.write("### Impact Behaviors")
         st.json(kb_data.get("impact_behavior", []))
+
+def render_terminal_view():
+    st.divider()
+    st.markdown("### 🖥️ Live System Terminal")
+    log_path = "nifty_engine/logs/engine.log"
+    if os.path.exists(log_path):
+        with open(log_path, "r") as f:
+            lines = f.readlines()
+            # Show last 15 lines in a code block
+            last_logs = "".join(lines[-15:])
+            st.code(last_logs, language="bash")
+    else:
+        st.info("Terminal log initialized. Waiting for engine start...")
 
 def render_settings():
     st.markdown("<div class='main-header'>System Settings</div>", unsafe_allow_html=True)
