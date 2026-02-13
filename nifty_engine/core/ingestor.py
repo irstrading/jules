@@ -2,6 +2,9 @@
 
 import time
 import pyotp
+import requests
+import json
+import os
 from SmartApi import SmartConnect
 from SmartApi.smartWebSocketV2 import SmartWebSocketV2
 from nifty_engine.config import (
@@ -125,14 +128,57 @@ class AngelOneIngestor:
         """Calculates ATM strike based on spot price."""
         return round(spot_price / base) * base
 
+    def download_scrip_master(self):
+        """Downloads the latest scrip master from Angel One."""
+        url = "https://margincalculator.angelbroking.com/OpenAPI_File/files/OpenAPIScripMaster.json"
+        try:
+            logger.info("Downloading Scrip Master...")
+            response = requests.get(url)
+            if response.status_code == 200:
+                with open("scrip_master.json", "w") as f:
+                    f.write(response.text)
+                logger.info("Scrip Master downloaded successfully.")
+                return True
+            else:
+                logger.error(f"Failed to download Scrip Master: {response.status_code}")
+                return False
+        except Exception as e:
+            logger.error(f"Error downloading Scrip Master: {e}")
+            return False
+
     def get_option_symbols(self, underlying, expiry_date, strike_price):
         """
-        In production, this would use a master contract file or API
-        to find the specific CE/PE tokens for a given strike.
-        For now, we'll implement a placeholder that simulates token discovery.
+        Searches the Scrip Master for the specific CE/PE tokens.
+        underlying: e.g., 'NIFTY'
+        expiry_date: e.g., '27FEB2025' (Format depends on scrip master)
         """
-        # Mocking token discovery for the sake of logic flow
-        # In real life, you'd search the Angel One Scrip Master
-        ce_token = f"OPT_{underlying}_{strike_price}_CE"
-        pe_token = f"OPT_{underlying}_{strike_price}_PE"
-        return ce_token, pe_token
+        if not os.path.exists("scrip_master.json"):
+            self.download_scrip_master()
+
+        try:
+            with open("scrip_master.json", "r") as f:
+                scrip_data = json.load(f)
+
+            ce_token = None
+            pe_token = None
+
+            for item in scrip_data:
+                if item['exch_seg'] == 'NFO' and underlying in item['symbol'] and expiry_date in item['expiry']:
+                    try:
+                        # Convert strike to float for comparison
+                        item_strike = float(item['strike']) / 100 # Sometimes strikes are multiplied by 100
+                        if abs(item_strike - strike_price) < 1: # Tolerance for float comparison
+                            if item['symbol'].endswith('CE'):
+                                ce_token = item['token']
+                            elif item['symbol'].endswith('PE'):
+                                pe_token = item['token']
+                    except:
+                        continue
+
+                if ce_token and pe_token:
+                    break
+
+            return ce_token, pe_token
+        except Exception as e:
+            logger.error(f"Error searching Scrip Master: {e}")
+            return None, None

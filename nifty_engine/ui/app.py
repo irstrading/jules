@@ -59,7 +59,7 @@ def main():
         st.image("https://openalgo.in/assets/img/logo.png", width=150) # Mock logo or text
         st.title("OpenAlgo v3")
         st.divider()
-        menu = st.radio("Navigation", ["Dashboard", "Option Chain", "Rules Engine", "Settings"])
+        menu = st.radio("Navigation", ["Dashboard", "Option Chain", "Rules Engine", "Algo Study Center", "Settings"])
 
         st.divider()
         engine_running = st.session_state.db.get_config("engine_running", "OFF") == "ON"
@@ -83,6 +83,8 @@ def main():
         render_option_chain()
     elif menu == "Rules Engine":
         render_rules()
+    elif menu == "Algo Study Center":
+        render_study_center()
     elif menu == "Settings":
         render_settings()
 
@@ -105,6 +107,16 @@ def render_dashboard():
         st.success(f"### 🎯 Market Alignment: {alignment['status']}")
     else:
         st.warning(f"### ⚖️ Market Alignment: {alignment['status']}")
+
+    # AI Insights Section
+    with st.expander("🤖 **AI Market Interpretation** (OpenAlgo Intelligence)", expanded=True):
+        from nifty_engine.core.ai_insights import AIInsights
+        ai = AIInsights()
+        # MMI calculation for logic
+        mmi_val = MarketMoodIndex.calculate(1.15, 45, 1.2, 1)
+        insights = ai.generate_narrative({'alignment': alignment, 'mmi': mmi_val, 'stock_states': stock_states})
+        for insight in insights:
+            st.write(insight)
 
     # Summary Metrics
     c1, c2, c3, c4 = st.columns(4)
@@ -205,6 +217,58 @@ def render_option_chain():
 
     st.write("### Gamma Exposure (GEX) Profile")
     st.info("Negative GEX below 24,400 | Positive GEX above 24,600")
+
+def render_study_center():
+    st.markdown("<div class='main-header'>Algo Study Center & Concept Library</div>", unsafe_allow_html=True)
+
+    tab1, tab2, tab3 = st.tabs(["📊 Market Alignment (70% Rule)", "📉 Gamma Exposure (GEX)", "🧠 Market Mood (MMI)"])
+
+    with tab1:
+        st.subheader("The 70% Alignment Principle")
+        st.write("""
+        **What is it?**
+        The 70% rule is the heart of this engine. It calculates the weighted participation of all Nifty 50 stocks.
+
+        - **Bullish Alignment (> 70%):** When stocks representing more than 70% of Nifty's weight are trading above their previous close. This indicates a 'Sustainable Trend'.
+        - **Bearish Alignment (> 70%):** When more than 70% of the weight is trading below previous close.
+
+        **Why it matters:**
+        If Nifty is up 50 points but Alignment is only 40%, it means a few heavyweights are 'carrying' the index. This is often a 'Fake Move'. Genuine rallies happen when the majority are aligned.
+        """)
+        st.info("💡 **Pro Tip:** Never go against the 70% alignment. If it's 85% Bullish, shorting the market is high risk.")
+
+    with tab2:
+        st.subheader("Gamma Exposure (GEX) Simplified")
+        st.write("""
+        **The 'Magnetic' Levels:**
+        GEX measures the hedging needs of Market Makers (Dealers).
+
+        - **Positive GEX (Green Zone):** Dealers buy dips and sell rallies. This suppresses volatility, leading to a 'Slow and Steady' market.
+        - **Negative GEX (Red Zone):** Dealers are forced to sell as price drops and buy as price rises. This 'Accelerates' the move, leading to fast crashes or explosive rallies.
+
+        **How to Trade:**
+        - **High Positive GEX:** Expect a range-bound day (Sideways). Good for Option Sellers.
+        - **Flip Point:** The strike where GEX changes from Positive to Negative is the 'Volatility Trigger'.
+        """)
+
+    with tab3:
+        st.subheader("Understanding Market Mood (MMI)")
+        st.write("""
+        The MMI is a composite index (0-100) that tells you the 'Emotional State' of the market.
+
+        1. **Extreme Fear (< 30):** Market is oversold. High probability of a bounce. 'Smart Money' starts buying here.
+        2. **Fear (30-50):** Cautious sentiment. Investors are hesitant.
+        3. **Greed (50-70):** Market is bullish. Retail participation is high.
+        4. **Extreme Greed (> 70):** Danger Zone. Market is overbought and due for a correction.
+        """)
+
+    st.divider()
+    st.subheader("Option Greeks Cheat Sheet")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Delta", "Speed", "Price Sensitivity")
+    c2.metric("Gamma", "Acceleration", "Delta Sensitivity")
+    c3.metric("Theta", "Time Decay", "Daily Erosion")
+    c4.metric("Vega", "Volatility", "IV Sensitivity")
 
 def render_rules():
     st.markdown("<div class='main-header'>Market Rules Engine</div>", unsafe_allow_html=True)
