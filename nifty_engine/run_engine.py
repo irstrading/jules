@@ -12,6 +12,7 @@ from nifty_engine.config import NIFTY_SYMBOL
 from nifty_engine.core.watchdog import ConnectionWatchdog, AutoReconnect
 from nifty_engine.core.movers import NiftyMovers
 from nifty_engine.core.rules_engine import RulesEngine
+from nifty_engine.core.smart_money import SmartMoneyAnalyzer
 import pandas as pd
 from datetime import datetime, timedelta
 
@@ -178,32 +179,33 @@ class NiftyEngine:
         # Sync strategy status from DB before running
         self.strategy_manager.sync_with_db()
 
-        # Calculate Stock Directions for 70% Alignment
-        stock_directions = {}
-        for symbol, state in self.stock_states.items():
-            if state['lp'] > state['pc']:
-                stock_directions[symbol] = 1
-            elif state['lp'] < state['pc']:
-                stock_directions[symbol] = -1
-            else:
-                stock_directions[symbol] = 0
+        # 1. Alignment & Market State (Index Only)
+        alignment = None
+        if symbol in [NIFTY_SYMBOL, "BANKNIFTY", "SENSEX"]:
+            # Calculate Stock Directions for 70% Alignment
+            stock_directions = {}
+            for s, state in self.stock_states.items():
+                if state['lp'] > state['pc']: stock_directions[s] = 1
+                elif state['lp'] < state['pc']: stock_directions[s] = -1
+                else: stock_directions[s] = 0
 
-        from nifty_engine.core.market_engine import IndexAlignment
-        alignment = IndexAlignment.calculate(stock_directions, self.movers.weights)
+            from nifty_engine.core.market_engine import IndexAlignment
+            alignment = IndexAlignment.calculate(stock_directions, self.movers.weights)
 
-        # Save Market State for UI
-        market_state = {
-            "alignment": alignment,
-            "stock_states": self.stock_states,
-            "updated_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        }
-        self.db.set_config("market_state", json.dumps(market_state))
+        # 2. Save Market State for UI
+        if alignment:
+            market_state = {
+                "alignment": alignment,
+                "stock_states": self.stock_states,
+                "updated_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+            self.db.set_config("market_state", json.dumps(market_state))
 
-        # Prepare Context for Strategies
+        # 3. Prepare Context for Strategies
         context = {
             "dynamic_rules": self.rules_engine.get_dynamic_context(),
             "movers": self.movers.weights,
-            "stock_directions": stock_directions,
+            "alignment": alignment,
             "timestamp": datetime.now()
         }
 

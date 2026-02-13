@@ -263,51 +263,39 @@ def render_option_chain():
     st.info("Negative GEX below 24,400 | Positive GEX above 24,600")
 
 def render_study_center():
-    st.markdown("<div class='main-header'>Algo Study Center & Concept Library</div>", unsafe_allow_html=True)
+    st.markdown("<div class='main-header'>Algo Study Center & Institutional Playbook</div>", unsafe_allow_html=True)
 
-    tab1, tab2, tab3 = st.tabs(["📊 Market Alignment (70% Rule)", "📉 Gamma Exposure (GEX)", "🧠 Market Mood (MMI)"])
+    kb_path = "nifty_engine/data/knowledge_base.json"
+    if not os.path.exists(kb_path):
+        st.error("Knowledge Base not found.")
+        return
 
-    with tab1:
-        st.subheader("The 70% Alignment Principle")
-        st.write("""
-        **What is it?**
-        The 70% rule is the heart of this engine. It calculates the weighted participation of all Nifty 50 stocks.
+    with open(kb_path, 'r') as f:
+        kb = json.load(f)
 
-        - **Bullish Alignment (> 70%):** When stocks representing more than 70% of Nifty's weight are trading above their previous close. This indicates a 'Sustainable Trend'.
-        - **Bearish Alignment (> 70%):** When more than 70% of the weight is trading below previous close.
+    tab_intel, tab_greeks, tab_mmi = st.tabs(["🏛️ Institutional Playbook", "📊 Option Greeks", "🧠 Market Mood"])
 
-        **Why it matters:**
-        If Nifty is up 50 points but Alignment is only 40%, it means a few heavyweights are 'carrying' the index. This is often a 'Fake Move'. Genuine rallies happen when the majority are aligned.
-        """)
-        st.info("💡 **Pro Tip:** Never go against the 70% alignment. If it's 85% Bullish, shorting the market is high risk.")
+    with tab_intel:
+        st.subheader("Institutional Pattern Library")
+        patterns = kb.get("institutional_patterns", {})
 
-    with tab2:
-        st.subheader("Gamma Exposure (GEX) Simplified")
-        st.write("""
-        **The 'Magnetic' Levels:**
-        GEX measures the hedging needs of Market Makers (Dealers).
+        cat = st.selectbox("Select Category", list(patterns.keys()))
+        if cat:
+            for p_name, p_data in patterns[cat].items():
+                with st.expander(f"**{p_name.replace('_', ' ').title()}** ({p_data.get('historical_success', 'N/A')} Success)"):
+                    st.write(f"🔍 **Detection:** {p_data['detection']}")
+                    st.write(f"💡 **Meaning:** {p_data['meaning']}")
+                    st.success(f"🚀 **Action:** {p_data['action']}")
+                    if 'risk' in p_data:
+                        st.warning(f"⚠️ **Risk:** {p_data['risk']}")
 
-        - **Positive GEX (Green Zone):** Dealers buy dips and sell rallies. This suppresses volatility, leading to a 'Slow and Steady' market.
-        - **Negative GEX (Red Zone):** Dealers are forced to sell as price drops and buy as price rises. This 'Accelerates' the move, leading to fast crashes or explosive rallies.
+        st.divider()
+        st.subheader("Master Trading Rules")
+        for rule, desc in kb.get("trading_rules", {}).items():
+            st.info(f"**{rule.replace('_', ' ').upper()}**: {desc}")
 
-        **How to Trade:**
-        - **High Positive GEX:** Expect a range-bound day (Sideways). Good for Option Sellers.
-        - **Flip Point:** The strike where GEX changes from Positive to Negative is the 'Volatility Trigger'.
-        """)
-
-    with tab3:
-        st.subheader("Understanding Market Mood (MMI)")
-        st.write("""
-        The MMI is a composite index (0-100) that tells you the 'Emotional State' of the market.
-
-        1. **Extreme Fear (< 30):** Market is oversold. High probability of a bounce. 'Smart Money' starts buying here.
-        2. **Fear (30-50):** Cautious sentiment. Investors are hesitant.
-        3. **Greed (50-70):** Market is bullish. Retail participation is high.
-        4. **Extreme Greed (> 70):** Danger Zone. Market is overbought and due for a correction.
-        """)
-
-    st.divider()
-    st.subheader("Option Greeks Cheat Sheet")
+    with tab_greeks:
+        st.subheader("Option Greeks Cheat Sheet")
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Delta", "Speed", "Price Sensitivity")
     c2.metric("Gamma", "Acceleration", "Delta Sensitivity")

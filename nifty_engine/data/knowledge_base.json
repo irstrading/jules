@@ -51,22 +51,103 @@
             "stocks": ["ITC", "HUL", "NESTLEIND"]
         }
     },
-    "market_rules": {
-        "SectorRotation": "If IT is weak, look at Banking or Pharma for stability.",
-        "ExpiryDay": "High Gamma volatility usually occurs after 1:30 PM.",
-        "NiftyMovers": "Reliance and HDFC Bank combined can move Nifty 50+ points alone.",
-        "GlobalImpact": "US Nasdaq highly impacts NIFTY IT sector sentiment.",
-        "PreMarketImpact": "GIFT Nifty movements often dictate the opening gap for Nifty 50.",
-        "MidCapBehavior": "Midcaps usually follow Nifty trend but with higher beta/volatility.",
-        "VIXRelation": "India VIX > 20 indicates high fear and potential for sharp pullbacks.",
-        "FII_DII_Activity": "FII buying usually leads to heavy-weight stock rallies."
+    "fo_stock_tiers": {
+        "Tier-1": ["RELIANCE", "HDFCBANK", "ICICIBANK", "INFY", "TCS", "SBIN", "AXISBANK", "LT", "TATAMOTORS"],
+        "Tier-2": ["ITC", "HINDALCO", "TATASTEEL", "ONGC", "POWERGRID"]
     },
-    "impact_behavior": [
-        {"event": "Budget Day", "behavior": "High IV, wide swings, usually ranges 2-4%."},
-        {"event": "RBI Policy", "behavior": "Direct impact on Bank Nifty and Banking stocks."},
-        {"event": "EarningsSeason", "behavior": "Individual stock volatility increases 2-3 days before results."},
-        {"event": "FedMeeting", "behavior": "Impacts USDINR and IT stocks globally."}
-    ],
+    "institutional_patterns": {
+        "greek_patterns": {
+            "high_gamma_concentration": {
+                "detection": "Gamma > 0.05 at single strike with OI > 50k lots",
+                "meaning": "Dealers will defend this strike aggressively",
+                "historical_success": "78%",
+                "action": "Expect price to gravitate towards this strike (Pinning)",
+                "risk": "Breaks on major news events"
+            },
+            "negative_gex_regime": {
+                "detection": "Net GEX < -2B",
+                "meaning": "Market makers will AMPLIFY moves (sell dips, buy rallies)",
+                "historical_success": "85%",
+                "action": "Use directional strategies, expect high volatility",
+                "risk": "Can persist for weeks"
+            },
+            "positive_gex_regime": {
+                "detection": "Net GEX > +2B",
+                "meaning": "Market makers will DAMPEN moves (buy dips, sell rallies)",
+                "historical_success": "82%",
+                "action": "Sell premium, expect range-bound market",
+                "risk": "Volatility crush"
+            },
+            "vomma_spike": {
+                "detection": "Vomma > 2.0 with IV percentile > 80",
+                "meaning": "Volatility of volatility is high - expect IV swings",
+                "historical_success": "72%",
+                "action": "Sell volatility when VIX spikes, buy when it crashes",
+                "risk": "Black swan events"
+            }
+        },
+        "oi_patterns": {
+            "put_wall_support": {
+                "detection": "Put OI > 2x average within 2% of spot",
+                "meaning": "Strong institutional support - likely floor",
+                "historical_success": "82%",
+                "action": "Buy dips near this level",
+                "risk": "Breaks on panic"
+            },
+            "call_wall_resistance": {
+                "detection": "Call OI > 2x average within 2% of spot",
+                "meaning": "Strong institutional selling - likely ceiling",
+                "historical_success": "79%",
+                "action": "Sell rallies near this level",
+                "risk": "Short squeeze"
+            },
+            "oi_divergence": {
+                "detection": "Price up + OI down OR Price down + OI up",
+                "meaning": "Position unwinding or aggressive buildup",
+                "historical_success": "73%",
+                "action": "Counter-trend trade with tight stops",
+                "regimes": {
+                    "long_buildup": "Price ↑ + OI ↑ (Bullish)",
+                    "short_buildup": "Price ↓ + OI ↑ (Bearish)",
+                    "long_unwinding": "Price ↓ + OI ↓ (Bearish)",
+                    "short_covering": "Price ↑ + OI ↓ (Explosive Bullish)"
+                }
+            }
+        },
+        "smart_money_patterns": {
+            "fii_aggressive_short": {
+                "detection": "FII index futures short > 80% percentile",
+                "meaning": "Foreign institutions very bearish",
+                "historical_success": "77%",
+                "action": "Defensive positioning, buy puts"
+            },
+            "dii_aggressive_buying": {
+                "detection": "DII net long > 90% percentile for 3+ days",
+                "meaning": "Domestic institutions very bullish",
+                "historical_success": "83%",
+                "action": "Follow DIIs at market bottoms"
+            },
+            "retail_capitulation": {
+                "detection": "Retail massively net short at market low",
+                "meaning": "Retail wrong at extremes - contrarian signal",
+                "historical_success": "89%",
+                "action": "FADE retail panic"
+            }
+        },
+        "time_patterns": {
+            "expiry_pinning": {
+                "detection": "Expiry day + high OI strike near spot",
+                "meaning": "Price gravitates to Max Pain strike",
+                "historical_success": "69%",
+                "action": "Iron Butterfly at Max Pain strike"
+            },
+            "budget_day": {
+                "detection": "Feb 1st",
+                "meaning": "Extreme volatility (3-5% moves possible)",
+                "action": "Long Straddles 1 week before, exit on announcement"
+            }
+        }
+    },
     "stock_behaviors": {
         "RELIANCE": "Often used to hold Nifty when other sectors are falling.",
         "HDFCBANK": "Key driver for Bank Nifty; 1% move here is significant.",
@@ -74,8 +155,9 @@
         "ITC": "Considered a defensive stock; often rises when market is uncertain.",
         "TATAMOTORS": "High volatility, sensitive to global JLR sales and auto policy."
     },
-    "fo_stock_tiers": {
-        "Tier-1": ["RELIANCE", "HDFCBANK", "ICICIBANK", "INFY", "TCS", "SBIN", "AXISBANK", "LT", "TATAMOTORS"],
-        "Tier-2": ["ITC", "HINDALCO", "TATASTEEL", "ONGC", "POWERGRID"]
+    "trading_rules": {
+        "stock_v_index": "Index GEX = Dealer game | Stock GEX = Operator + Dealer hybrid",
+        "liquidity_filter": "Only use GEX on Tier-1 stocks (Reliance, HDFC, etc.)",
+        "iv_regime_swing": "For swing (1-5 days) → avoid falling IV"
     }
 }

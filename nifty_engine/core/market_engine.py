@@ -133,6 +133,34 @@ class OptionsAnalyzer:
             return 0
         return round(oi_history[-1]['pcr'] - oi_history[0]['pcr'], 4)
 
+    @staticmethod
+    def identify_behavior_tag(price_change, oi_change, iv_change):
+        """
+        Identifies behavior tag for a strike.
+        LW: Long Writing (Usually called Long Buildup)
+        SW: Short Writing (Usually called Short Buildup)
+        SC: Short Covering
+        LU: Long Unwinding
+        """
+        if price_change > 0 and oi_change > 0:
+            return "LB (Long Buildup)" if iv_change >= 0 else "SW (Short Writing)"
+        elif price_change < 0 and oi_change > 0:
+            return "SB (Short Buildup)" if iv_change >= 0 else "LW (Long Writing)"
+        elif price_change < 0 and oi_change < 0:
+            return "LU (Long Unwinding)"
+        elif price_change > 0 and oi_change < 0:
+            return "SC (Short Covering)"
+        return "Neutral"
+
+    @staticmethod
+    def detect_trap(price_breakout, iv_expansion):
+        """
+        Trap detection logic: If price breaks a level but IV doesn't expand, it's likely a trap.
+        """
+        if price_breakout and not iv_expansion:
+            return True
+        return False
+
 # ==========================================
 # PART 5: MARKET MOOD INDEX (MMI)
 # ==========================================
@@ -229,6 +257,12 @@ class StockAnalyzer:
         elif abs(price_change) < 0.5 and iv_change < 0:
             return "Option Selling (Falling IV + Range)"
         return "Neutral"
+
+    @staticmethod
+    def calculate_iv_percentile(current_iv, iv_history):
+        if not iv_history: return 50
+        count = sum(1 for x in iv_history if x < current_iv)
+        return round((count / len(iv_history)) * 100, 2)
 
     @staticmethod
     def calculate_swing_score(data):
