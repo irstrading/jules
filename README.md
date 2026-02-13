@@ -23,39 +23,41 @@ Run `python launcher.py --auto` in your terminal.
 Open the newly created `.env` file and paste your Angel One and Telegram details.
 
 ### 4. Start Trading
-Run `python launcher.py` again, select **Option 1**, and you are live! 🚀
+Run `start.bat` again, select **Option 1**, and you are live! 🚀
+*(Or select **Option 4** to see the system with demo data immediately!)*
 
 ---
 
-## 🛠️ Key Features (The "Impossible" Made Easy)
+## 🛠️ Key Features
 
-- **One-Click Setup:** No manual `pip install` or file renaming required.
-- **AI-Enhanced Dashboard:** Live 70% Index Alignment, MMI (Market Mood), and ATM Straddle charts.
-- **Auto-Token Discovery:** Never worry about weekly expiry changes; the engine handles it.
-- **Resilient Connection:** Built-in auto-reconnect with session refresh.
-- **Algo Study Center:** Learn GEX, Greeks, and Sentiment directly inside the dashboard.
+- **Institutional Logic:** Real-time Greeks, GEX, and MMI tracking.
+- **Smart Money Tracking:** Automated analysis of FII/DII/Retail positioning.
+- **Behavior Tagging:** Automatic identification of Long Buildup, Short Covering, etc.
+- **Self-Learning Engine:** Tracks outcomes and adjusts confidence scores.
+- **Institutional Playbook:** Built-in library of 190+ professional trading patterns.
 
 ---
 
 ## 📂 Project Structure
 
-- `nifty_engine/`: Core logic, UI, and strategies.
-- `launcher.py`: The magical one-click entry point.
-- `nifty_data.db`: Your local high-speed persistence layer.
-- `.env`: Your secure credentials vault.
+- `main.py`: Orchestrator of the analysis cycles.
+- `anza_dashboard.py`: Premium institutional dashboard.
+- `core/`: Advanced analysis engines (Greeks, GEX, OI).
+- `services/`: API wrappers (Angel One, Alerts).
+- `database/`: Persistence layer and Knowledge Base.
+- `logs/`: Real-time system logs.
 
 ---
 
 ## 🛡️ Safety First
-The system includes a **Global Kill Switch**. If anything goes wrong, hit the Red Button in the dashboard or use your Telegram command to stop all execution instantly.
+The system includes a **Global Circuit Breaker**. If data quality drops or an API error occurs, the system halts trading and alerts you instantly.
 
 ---
 
 ## 🛠️ Troubleshooting
 
-- **ModuleNotFoundError:** If you see this, ensure you run the code via `launcher.py`. It automatically sets the correct `PYTHONPATH` so the internal modules can find each other.
-- **Angel One Login:** If your TOTP fails, double-check your `ANGEL_ONE_TOTP_SECRET` in `.env`. It should be the alphanumeric key provided by Angel One during 2FA setup.
-- **Windows/PowerShell:** If script execution is disabled on your machine, you might need to run:
-  `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` in PowerShell.
+- **ModuleNotFoundError:** Ensure you run the code via `launcher.py` or `start.bat`.
+- **Angel One Login:** Double-check your `ANGEL_ONE_TOTP_SECRET` in `.env`.
+- **Windows/PowerShell:** Run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` if scripts are disabled.
 
-**Happy Trading! Your professional assistant is now ready.**
+**Happy Trading! Your institutional assistant is now ready.**
