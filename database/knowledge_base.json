@@ -1,0 +1,63 @@
+{
+    "nifty_50_weights": {
+        "RELIANCE": {"weight": 9.2, "token": "2885"},
+        "HDFCBANK": {"weight": 11.5, "token": "1333"},
+        "ICICIBANK": {"weight": 7.8, "token": "4963"},
+        "INFY": {"weight": 5.5, "token": "1594"},
+        "BHARTIARTL": {"weight": 4.2, "token": "10604"},
+        "SBIN": {"weight": 3.1, "token": "3045"},
+        "LT": {"weight": 3.8, "token": "11483"},
+        "ITC": {"weight": 3.9, "token": "1660"},
+        "AXISBANK": {"weight": 3.3, "token": "5900"},
+        "TCS": {"weight": 3.7, "token": "11536"},
+        "KOTAKBANK": {"weight": 2.9, "token": "1922"},
+        "HCLTECH": {"weight": 2.4, "token": "2324"},
+        "BAJFINANCE": {"weight": 2.1, "token": "317"},
+        "M&M": {"weight": 2.1, "token": "2031"},
+        "MARUTI": {"weight": 1.7, "token": "10999"},
+        "SUNPHARMA": {"weight": 1.6, "token": "3351"},
+        "TITAN": {"weight": 1.5, "token": "3506"},
+        "ASIANPAINT": {"weight": 1.4, "token": "236"},
+        "ULTRACEMCO": {"weight": 1.1, "token": "11532"},
+        "TATASTEEL": {"weight": 1.1, "token": "3499"}
+    },
+    "institutional_patterns": {
+        "greek_patterns": {
+            "negative_gex_regime": {
+                "detection": "Net GEX < -2B",
+                "meaning": "Dealers will AMPLIFY moves",
+                "action": "Expect high volatility, use directional strategies",
+                "historical_success": "85%",
+                "source": "Gamma Exposure research"
+            },
+            "positive_gex_regime": {
+                "detection": "Net GEX > +2B",
+                "meaning": "Dealers will DAMPEN moves",
+                "action": "Expect low volatility, sell premium",
+                "historical_success": "82%",
+                "source": "SqueezeMetrics"
+            }
+        },
+        "smart_money_patterns": {
+            "fii_aggressive_short": {
+                "detection": "FII net short > 80% percentile",
+                "meaning": "Foreign institutions very bearish",
+                "action": "Defensive positioning, buy puts",
+                "historical_success": "77%",
+                "source": "NSE FII data"
+            },
+            "retail_capitulation": {
+                "detection": "Retail massively short at market low",
+                "meaning": "Contrarian bullish signal",
+                "action": "FADE retail panic",
+                "historical_success": "89%",
+                "source": "Behavioral finance"
+            }
+        }
+    },
+    "trading_rules": {
+        "stock_v_index": "Index GEX = Dealer game | Stock GEX = Operator + Dealer hybrid",
+        "liquidity_filter": "Only use GEX on Tier-1 stocks",
+        "iv_regime_swing": "For swing (1-5 days) -> avoid falling IV"
+    }
+}
