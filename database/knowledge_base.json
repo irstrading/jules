@@ -3,66 +3,62 @@
     {
       "name": "Gamma Squeeze",
       "type": "BULLISH",
-      "conditions": {
-        "net_gex": "NEGATIVE",
-        "pcr_change": "INCREASING",
-        "spot_trend": "UP"
-      },
       "description": "Market makers are forced to buy as price rises to hedge negative gamma, accelerating the move.",
       "success_rate": 82
     },
     {
       "name": "Institutional Accumulation",
       "type": "BULLISH",
-      "conditions": {
-        "fii_net_cash": "POSITIVE",
-        "price_action": "SIDEWAYS",
-        "volume_cluster": "HIGH"
-      },
       "description": "Smart money is building positions without moving the price significantly. Bullish breakout expected.",
       "success_rate": 75
     },
     {
       "name": "Short Covering Rally",
       "type": "BULLISH",
-      "conditions": {
-        "price_change": "POSITIVE",
-        "oi_change": "NEGATIVE",
-        "sentiment": "PANIC"
-      },
       "description": "Bears are trapped and exiting positions, creating explosive upward momentum.",
       "success_rate": 88
     },
     {
-      "name": "Gamma Flip (Support Building)",
-      "type": "NEUTRAL_TO_BULLISH",
-      "conditions": {
-        "spot_at_flip": true,
-        "call_oi_increasing": true
-      },
-      "description": "Market is transitioning from negative to positive gamma regime. High volatility expected at this level.",
-      "success_rate": 65
+        "name": "Gamma Flip (Support)",
+        "type": "BULLISH",
+        "description": "Price at GEX flip level acting as strong support. Dealers buy the dip.",
+        "success_rate": 68
     },
     {
         "name": "Long Unwinding",
         "type": "BEARISH",
-        "conditions": {
-          "price_change": "NEGATIVE",
-          "oi_change": "NEGATIVE"
-        },
         "description": "Bulls are giving up and exiting their positions. Market likely to drift lower.",
         "success_rate": 70
     },
     {
         "name": "Institutional Distribution",
         "type": "BEARISH",
-        "conditions": {
-          "fii_net_cash": "NEGATIVE",
-          "price_action": "SIDEWAYS",
-          "mmi": "EXTREME_GREED"
-        },
         "description": "Smart money is offloading positions to retail at high prices. Major correction possible.",
         "success_rate": 78
+    },
+    {
+        "name": "IV Crush (Expiry Special)",
+        "type": "NEUTRAL",
+        "description": "High IV at open expected to collapse. Best for non-directional selling.",
+        "success_rate": 85
+    },
+    {
+        "name": "Bear Trap",
+        "type": "BULLISH",
+        "description": "False breakdown of support followed by rapid recovery and OI red.",
+        "success_rate": 72
+    },
+    {
+        "name": "Delta Neutral Pinning",
+        "type": "NEUTRAL",
+        "description": "Large Straddle/Strangle OI at a specific strike, price likely to pin there for expiry.",
+        "success_rate": 80
+    },
+    {
+        "name": "Vomma Spike (Vol Expansion)",
+        "type": "BULLISH/BEARISH",
+        "description": "Rapid increase in Vega sensitivity. Volatility explosion imminent.",
+        "success_rate": 65
     }
   ],
   "failure_scenarios": [
@@ -76,5 +72,11 @@
         "description": "Divergence in Alignment",
         "warning": "Index is rising but 70% of stocks are falling. Weak rally, likely to fail."
     }
-  ]
+  ],
+  "sectors": {
+    "Banking": ["HDFCBANK", "ICICIBANK", "AXISBANK", "KOTAKBANK", "SBIN"],
+    "IT": ["TCS", "INFY", "WIPRO", "HCLTECH", "TECHM"],
+    "Auto": ["TATAMOTORS", "M&M", "MARUTI", "BAJAJ-AUTO"],
+    "Energy": ["RELIANCE", "ONGC", "BPCL", "NTPC"]
+  }
 }

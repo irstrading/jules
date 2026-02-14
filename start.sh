@@ -1,3 +1,14 @@
 #!/bin/bash
-echo "🔥 Starting Nifty Advanced Algo Engine..."
-python3 launcher.py --auto
+
+# --- ANZA PRO ONE-CLICK LAUNCHER (LINUX) ---
+
+if command -v python3 &>/dev/null; then
+    PY=python3
+elif command -v python &>/dev/null; then
+    PY=python
+else
+    echo "❌ ERROR: Python not found."
+    exit 1
+fi
+
+$PY launcher.py --auto

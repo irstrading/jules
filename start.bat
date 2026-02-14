@@ -1,25 +1,28 @@
 @echo off
 SETLOCAL EnableDelayedExpansion
 
-echo ====================================================
-echo 🚀 ANZA OPTION ANALYSIS - ONE CLICK SETUP 🚀
-echo ====================================================
+:: --- ANZA PRO ONE-CLICK LAUNCHER ---
 
-:: Check if Python is installed
+:: Try python then python3
 python --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo ❌ ERROR: Python not found! Please install Python from python.org
-    pause
-    exit /b
+if %errorlevel% == 0 (
+    set PY=python
+) else (
+    python3 --version >nul 2>&1
+    if %errorlevel% == 0 (
+        set PY=python3
+    ) else (
+        echo ❌ ERROR: Python not found. Please install it!
+        pause
+        exit /b
+    )
 )
 
-:: Run launcher with auto-start
-python launcher.py --auto
+:: Run the orchestrator
+%PY% launcher.py --auto
 
 if %errorlevel% neq 0 (
     echo.
-    echo ⚠️ System stopped or error occurred.
-    echo 💡 Check if you need to fill credentials in .env file
+    echo ⚠️ System stopped.
 )
-
 pause
