@@ -191,7 +191,7 @@ def main():
     if selected == "Market Intelligence":
         render_market_intel(market_data, greeks, gex, oi, sm)
     elif selected == "Strategy Builder":
-        render_strategy_builder()
+        render_strategy_builder(market_data)
     elif selected == "Stock Intelligence":
         render_stock_intel(market_data)
     elif selected == "Flow Dynamics":
@@ -465,7 +465,7 @@ def render_playbook():
                     </div>
                     """, unsafe_allow_html=True)
 
-def render_strategy_builder():
+def render_strategy_builder(market_data):
     st.markdown('<div class="main-header">Strategy Builder & Simulator</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header">Institutional Multi-Leg Modeling | Payoff Analysis | Probabilistic Simulation</div>', unsafe_allow_html=True)
 
@@ -476,7 +476,8 @@ def render_strategy_builder():
             <h4 style='margin-top:0; color: var(--anza-gold); font-family: Orbitron;'>CONSTRUCTION</h4>
         </div>""", unsafe_allow_html=True)
 
-        spot_ref = st.number_input("Ref. Nifty Spot", value=24500, step=50)
+        spot_val = int(market_data.get('spot_price', 24500))
+        spot_ref = st.number_input("Ref. Nifty Spot", value=spot_val, step=50)
         if 'builder_legs' not in st.session_state: st.session_state.builder_legs = []
 
         with st.form("add_leg"):

@@ -11,3 +11,5 @@ streamlit-autorefresh
 streamlit-option-menu
 beautifulsoup4
 requests
+yfinance
+nsepython
