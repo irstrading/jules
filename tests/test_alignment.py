@@ -1,4 +1,4 @@
-from nifty_engine.core.market_engine import IndexAlignment
+from core.analyzers import IndexAlignment
 
 def test_alignment():
     weights = {"RELIANCE": 10, "HDFCBANK": 10, "INFY": 5, "TCS": 5}
