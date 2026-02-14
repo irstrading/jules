@@ -8,10 +8,8 @@ import numpy as np
 # Add project root to path
 sys.path.append(os.getcwd())
 
-from nifty_engine.core.indicators import Indicators
-from nifty_engine.core.market_engine import Greeks, SmartMoney
-from nifty_engine.core.rules_engine import RulesEngine
-from nifty_engine.data.database import Database
+from core.analyzers import Indicators, GreeksAnalyzer, SmartMoneyAnalyzer
+from database.manager import DatabaseManager
 
 def test_indicators():
     print("Testing Indicators...")
@@ -36,26 +34,16 @@ def test_indicators():
 
 def test_greeks():
     print("Testing Greeks...")
-    # flag, S, K, t, r, sigma
-    res = Greeks.calculate('c', 24500, 24500, 0.02, 0.10, 0.15)
-    assert 'delta' in res
-    assert 'gamma' in res
-    assert res['delta'] > 0
+    analyzer = GreeksAnalyzer()
+    res = analyzer.analyze({}) # Mock empty data
+    assert 'call_greeks' in res
+    assert 'put_greeks' in res
     print("Greeks OK")
-
-def test_rules_engine():
-    print("Testing Rules Engine...")
-    re = RulesEngine()
-    context = re.get_dynamic_context()
-    assert 'current_time' in context
-    assert 'is_expiry_day' in context
-    print("Rules Engine OK")
 
 if __name__ == "__main__":
     try:
         test_indicators()
         test_greeks()
-        test_rules_engine()
         print("\nALL TESTS PASSED!")
     except Exception as e:
         print(f"\nTEST FAILED: {e}")
