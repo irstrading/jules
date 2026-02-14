@@ -30,6 +30,21 @@ class SmartMoneyAnalyzer:
         # Tracking FII/DII
         return {'fii_bias': 'Neutral', 'dii_bias': 'Bullish'}
 
+    @staticmethod
+    def identify_cycle_phase(cash_flow_ma, price_trend):
+        """
+        Identifies market cycle phase based on Institutional Flow MA and Price.
+        """
+        if cash_flow_ma > 0 and price_trend == "SIDEWAYS":
+            return "ACCUMULATION"
+        elif cash_flow_ma > 0 and price_trend == "UP":
+            return "MARKUP"
+        elif cash_flow_ma < 0 and price_trend == "SIDEWAYS":
+            return "DISTRIBUTION"
+        elif cash_flow_ma < 0 and price_trend == "DOWN":
+            return "MARKDOWN"
+        return "NEUTRAL"
+
 class StockAnalyzer:
     @staticmethod
     def analyze_iv_regime(price_change, iv_change):
